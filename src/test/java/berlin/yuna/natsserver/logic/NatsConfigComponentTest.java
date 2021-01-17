@@ -3,6 +3,7 @@ package berlin.yuna.natsserver.logic;
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.natsserver.config.NatsServerConfig;
 import berlin.yuna.natsserver.config.NatsServerSourceConfig;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -89,7 +90,7 @@ class NatsConfigComponentTest {
         }
     }
 
-    private Set<String> getNotMatchingEntities(List<String> list1, List<String> list2) {
+    private Set<String> getNotMatchingEntities(final List<String> list1, final List<String> list2) {
         Set<String> noMatches = new HashSet<>();
         for (String entity : list1) {
             if (!list2.contains(entity)) {
@@ -99,7 +100,7 @@ class NatsConfigComponentTest {
         return noMatches;
     }
 
-    private List<String> readConfigKeys(String console) {
+    private List<String> readConfigKeys(final String console) {
         List<String> allMatches = new ArrayList<>();
         Matcher m = Pattern.compile("-([a-z_]*)(\\s+|=)<[^,]").matcher(console);
         while (m.find()) {
@@ -108,7 +109,7 @@ class NatsConfigComponentTest {
         return allMatches;
     }
 
-    public static String read(InputStream input) throws IOException {
+    public static String read(final InputStream input) throws IOException {
         try (BufferedReader buffer = new BufferedReader(new InputStreamReader(input, UTF_8))) {
             return buffer.lines().collect(Collectors.joining("\n"));
         }

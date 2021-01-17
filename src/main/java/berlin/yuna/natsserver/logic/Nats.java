@@ -68,7 +68,7 @@ public class Nats {
      * Create {@link Nats} without any start able configuration
      */
     public Nats() {
-         name = Nats.class.getSimpleName();
+        name = Nats.class.getSimpleName() + "server";
     }
 
     /**
@@ -98,6 +98,16 @@ public class Nats {
      */
     public Map<NatsServerConfig, String> getNatsServerConfig() {
         return natsServerConfig;
+    }
+
+    /**
+     * Sets a single condig value
+     *
+     * @return the {@link Nats} configuration but not the config of the real PID
+     */
+    public Nats config(final NatsServerConfig key, final String value) {
+        natsServerConfig.put(key, value);
+        return this;
     }
 
     /**
@@ -134,6 +144,22 @@ public class Nats {
 
     private boolean isEmpty(String property) {
         return property == null || property.trim().length() <= 0;
+    }
+
+
+    /**
+     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link Nats#setNatsServerConfig(String...)}
+     * Throws all exceptions as {@link RuntimeException}
+     *
+     * @return {@link Nats}
+     */
+    public Nats tryStart() {
+        try {
+            start();
+            return this;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -184,7 +210,6 @@ public class Nats {
      * Only a log error will occur if the {@link Nats} were never started
      *
      * @return {@link Nats}
-     * @throws RuntimeException as {@link InterruptedException} if shutdown is interrupted
      */
     public Nats stop() {
         try {
@@ -193,6 +218,7 @@ public class Nats {
             process.waitFor();
         } catch (NullPointerException | InterruptedException ignored) {
             LOG.warn("Could not stop [{}] cause cant find process", name);
+            LOG.warn("Kill [{}]", getNatsServerPath(OPERATING_SYSTEM).getFileName().toString());
             killProcessByName(getNatsServerPath(OPERATING_SYSTEM).getFileName().toString());
         } finally {
             LOG.info("Stopped [{}]", name);
