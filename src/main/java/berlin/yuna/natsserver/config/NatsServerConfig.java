@@ -16,7 +16,7 @@ public enum NatsServerConfig {
     STAN_CONFIG(null, "[STRING] Streaming server configuration file"),
     HB_INTERVAL(null, "[DURATION] Interval at which server sends heartbeat to a client"),
     HB_TIMEOUT(null, "[DURATION] How long server waits for a heartbeat response"),
-    HB_FAIL_COUNT(null, "[INT] Number of failed heartbeats before server closes the client connection"),
+    HB_FAIL_COUNT(3, "[INT] Number of failed heartbeats before server closes the client connection"),
     FT_GROUP(null, "[STRING] Name of the FT Group. A group can be 2 or more servers with a single active server and all sharing the same datastore."),
     SIGNAL(null, "[STRING] [SIGNAL] Send signal to nats-streaming-server process (stop, quit, reopen)"),
     ENCRYPT(null, "[BOOL] Specify if server should use encryption at rest"),

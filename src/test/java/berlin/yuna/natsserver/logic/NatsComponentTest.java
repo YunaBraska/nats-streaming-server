@@ -19,6 +19,7 @@ import static berlin.yuna.clu.logic.SystemUtil.OperatingSystem.LINUX;
 import static berlin.yuna.clu.logic.SystemUtil.OperatingSystem.WINDOWS;
 import static berlin.yuna.clu.logic.SystemUtil.getOsType;
 import static berlin.yuna.natsserver.config.NatsServerConfig.AUTH;
+import static berlin.yuna.natsserver.config.NatsServerConfig.HB_FAIL_COUNT;
 import static berlin.yuna.natsserver.config.NatsServerConfig.MAX_AGE;
 import static berlin.yuna.natsserver.config.NatsServerConfig.PASS;
 import static berlin.yuna.natsserver.config.NatsServerConfig.PORT;
@@ -31,7 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Tag("IntegrationTest")
+@Tag("UnitTest")
 @DisplayName("NatsServer plain java")
 class NatsComponentTest {
 
@@ -58,7 +59,7 @@ class NatsComponentTest {
     @Test
     @DisplayName("Default config")
     void natsServer_withoutConfig_shouldStartWithDefaultValues() throws Exception {
-        Nats nats = new Nats().port(4238).source(natsSource);
+        Nats nats = new Nats().config(HB_FAIL_COUNT, "5").port(4238).source(natsSource);
         assertThat(nats.source(), is(equalTo(natsSource)));
         nats.start();
         nats.stop();
@@ -89,7 +90,7 @@ class NatsComponentTest {
     void natsServer_invalidConfig_shouldNotRunIntroException() {
         Nats nats = new Nats(4240).source(natsSource);
         nats.setNatsServerConfig("user:adminUser:password", " ", "auth:isValid", "");
-        assertThat(nats.getNatsServerConfig().size(), is(22));
+        assertThat(nats.getNatsServerConfig().size(), is(23));
         assertThat(nats.getNatsServerConfig().get(AUTH), is(equalTo("isValid")));
     }
 
@@ -115,17 +116,17 @@ class NatsComponentTest {
     @Test
     @DisplayName("Duplicate instances [FAIL]")
     void natsServer_asTwoInstances_shouldThrowBindException() {
-        Nats nats_one = new Nats(4233).source(natsSource);
-        Nats nats_two = new Nats(4233).source(natsSource);
+        Nats nats_Java_one = new Nats(4233).source(natsSource);
+        Nats nats_Java_two = new Nats(4233).source(natsSource);
         Exception exception = null;
         try {
-            nats_one.start();
-            nats_two.start();
+            nats_Java_one.start();
+            nats_Java_two.start();
         } catch (Exception e) {
             exception = e;
         } finally {
-            nats_one.stop();
-            nats_two.stop();
+            nats_Java_one.stop();
+            nats_Java_two.stop();
         }
         assertThat(requireNonNull(exception).getClass().getSimpleName(), is(equalTo(BindException.class.getSimpleName())));
     }
