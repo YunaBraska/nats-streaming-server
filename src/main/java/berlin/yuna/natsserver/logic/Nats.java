@@ -212,6 +212,18 @@ public class Nats {
      * @return {@link Nats}
      */
     public Nats stop() {
+        return stop(false);
+    }
+
+    /**
+     * Stops the {@link ProcessBuilder} and kills the {@link Nats}
+     * Only a log error will occur if the {@link Nats} were never started
+     *
+     * @param andWait on {@code true} will wait (max 10 seconds) until the configured port is free
+     *
+     * @return {@link Nats}
+     */
+    public Nats stop(final boolean andWait) {
         try {
             LOG.info("Stopping [{}]", name);
             process.destroy();
