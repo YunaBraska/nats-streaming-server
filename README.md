@@ -83,8 +83,8 @@ public class MyNatsTest {
 
 * All configurations are optional. (see all configs
   here: [NatsServerConfig](https://github.com/YunaBraska/nats-streaming-server/blob/master/src/main/java/berlin/yuna/natsserver/config/NatsServerConfig.java))
-* Nats server default sources are described here: 
-  See [NatsServerConfig](https://github.com/YunaBraska/nats-streaming-server/blob/master/src/main/java/berlin/yuna/natsserver/config/NatsServerConfig.java)
+* Nats server default sources are described
+  here: [NatsServerSourceConfig](https://github.com/YunaBraska/nats-streaming-server/blob/master/src/main/java/berlin/yuna/natsserver/config/NatsServerSourceConfig.java)
 
 ```
                                                              .,,.                                                             
