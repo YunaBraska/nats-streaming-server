@@ -176,7 +176,7 @@ public class Nats {
             return this;
         }
 
-        if (!waitForPort(true)) {
+        if (!waitForPort(port(), true)) {
             throw new BindException("Address already in use [" + port() + "]");
         }
 
@@ -196,7 +196,7 @@ public class Nats {
                 .execute(command);
         process = terminal.process();
 
-        if (!waitForPort(false)) {
+        if (!waitForPort(port(), false)) {
             throw new PortUnreachableException(name + " failed to start with port [" + port() + "]"
                     + "\n" + terminal.consoleInfo()
                     + "\n" + terminal.consoleError());
@@ -217,10 +217,12 @@ public class Nats {
             process.destroy();
             process.waitFor();
         } catch (NullPointerException | InterruptedException ignored) {
-            LOG.warn("Could not stop [{}] cause cant find process", name);
-            LOG.warn("Kill [{}]", getNatsServerPath(OPERATING_SYSTEM).getFileName().toString());
-            killProcessByName(getNatsServerPath(OPERATING_SYSTEM).getFileName().toString());
+            final String processName = getNatsServerPath(OPERATING_SYSTEM).getFileName().toString();
+            LOG.warn("Could not find process to stop [{}]", name);
+            LOG.warn("Terminate by name [{}]", processName);
+            killProcessByName(processName);
         } finally {
+            waitForPort(port(), true);
             LOG.info("Stopped [{}]", name);
         }
         return this;
@@ -321,13 +323,12 @@ public class Nats {
         }
     }
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean waitForPort(boolean isFree) {
+    public static boolean waitForPort(final int port, boolean isFree) {
         final long start = System.currentTimeMillis();
         long timeout = SECONDS.toMillis(10);
 
         while (System.currentTimeMillis() - start < timeout) {
-            if (isPortAvailable(port()) == isFree) {
+            if (isPortAvailable(port) == isFree) {
                 return true;
             }
             Thread.yield();
