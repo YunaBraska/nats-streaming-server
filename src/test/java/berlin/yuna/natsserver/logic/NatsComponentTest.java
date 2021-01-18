@@ -58,10 +58,10 @@ class NatsComponentTest {
 
     @Test
     @DisplayName("Default config")
-    void natsServer_withoutConfig_shouldStartWithDefaultValues() throws Exception {
+    void natsServer_withoutConfig_shouldStartWithDefaultValues() {
         Nats nats = new Nats().config(HB_FAIL_COUNT, "5").port(4238).source(natsSource);
         assertThat(nats.source(), is(equalTo(natsSource)));
-        nats.start();
+        nats.tryStart();
         nats.stop();
         assertThat(nats.toString().length(), is(greaterThan(1)));
     }
@@ -160,7 +160,7 @@ class NatsComponentTest {
     }
 
     @Test
-    @DisplayName("Configure with NULL invalid value [FAIL]")
+    @DisplayName("Configure with invalid config value [FAIL]")
     void natsServer_withInvalidConfigValue_shouldNotRunIntroExceptionOrInterrupt() {
         Nats nats = new Nats(MAX_AGE + ":invalidValue", PORT + ":4237").source(natsSource);
         assertThrows(
@@ -190,6 +190,11 @@ class NatsComponentTest {
         assertThrows(
                 RuntimeException.class,
                 nats::start,
+                "Could not initialise port"
+        );
+        assertThrows(
+                RuntimeException.class,
+                nats::tryStart,
                 "Could not initialise port"
         );
     }
