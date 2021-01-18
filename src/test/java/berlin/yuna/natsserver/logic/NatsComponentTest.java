@@ -100,7 +100,7 @@ class NatsComponentTest {
         Nats nats = new Nats(4231).source(natsSource);
         nats.start();
         nats.start();
-        nats.stop();
+        nats.stop(true);
     }
 
     @Test
