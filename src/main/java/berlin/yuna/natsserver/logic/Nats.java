@@ -154,8 +154,19 @@ public class Nats {
      * @return {@link Nats}
      */
     public Nats tryStart() {
+        return tryStart(SECONDS.toMillis(10));
+    }
+
+    /**
+     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link Nats#setNatsServerConfig(String...)}
+     * Throws all exceptions as {@link RuntimeException}
+     *
+     * @param timeoutMs defines the start up timeout {@code -1} no timeout, else waits until port up
+     * @return {@link Nats}
+     */
+    public Nats tryStart(final long timeoutMs) {
         try {
-            start();
+            start(timeoutMs);
             return this;
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -171,12 +182,25 @@ public class Nats {
      * @throws PortUnreachableException if {@link Nats} is not starting cause port is not free
      */
     public Nats start() throws IOException {
+        return start(SECONDS.toMillis(10));
+    }
+
+    /**
+     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link Nats#setNatsServerConfig(String...)}
+     *
+     * @param timeoutMs defines the start up timeout {@code -1} no timeout, else waits until port up
+     * @return {@link Nats}
+     * @throws IOException              if {@link Nats} is not found or unsupported on the {@link OperatingSystem}
+     * @throws BindException            if port is already taken
+     * @throws PortUnreachableException if {@link Nats} is not starting cause port is not free
+     */
+    public Nats start(final long timeoutMs) throws IOException {
         if (process != null) {
             LOG.error("[{}] is already running", name);
             return this;
         }
 
-        if (!waitForPort(port(), true)) {
+        if (!waitForPort(port(), timeoutMs, true)) {
             throw new BindException("Address already in use [" + port() + "]");
         }
 
@@ -191,12 +215,12 @@ public class Nats {
         final Terminal terminal = new Terminal()
                 .consumerInfo(LOG::info)
                 .consumerError(LOG::error)
-                .timeoutMs(10000)
+                .timeoutMs(timeoutMs > 0 ? timeoutMs : 10000)
                 .breakOnError(false)
                 .execute(command);
         process = terminal.process();
 
-        if (!waitForPort(port(), false)) {
+        if (!waitForPort(port(), timeoutMs, false)) {
             throw new PortUnreachableException(name + " failed to start with port [" + port() + "]"
                     + "\n" + terminal.consoleInfo()
                     + "\n" + terminal.consoleError());
@@ -212,18 +236,17 @@ public class Nats {
      * @return {@link Nats}
      */
     public Nats stop() {
-        return stop(false);
+        return stop(-1);
     }
 
     /**
      * Stops the {@link ProcessBuilder} and kills the {@link Nats}
      * Only a log error will occur if the {@link Nats} were never started
      *
-     * @param andWait on {@code true} will wait (max 10 seconds) until the configured port is free
-     *
+     * @param timeoutMs defines the tear down timeout, {@code -1} no timeout, else waits until port is free again
      * @return {@link Nats}
      */
-    public Nats stop(final boolean andWait) {
+    public Nats stop(final long timeoutMs) {
         try {
             LOG.info("Stopping [{}]", name);
             process.destroy();
@@ -234,7 +257,7 @@ public class Nats {
             LOG.warn("Terminate by name [{}]", processName);
             killProcessByName(processName);
         } finally {
-            waitForPort(port(), true);
+            waitForPort(port(), timeoutMs, true);
             LOG.info("Stopped [{}]", name);
         }
         return this;
@@ -335,17 +358,16 @@ public class Nats {
         }
     }
 
-    public static boolean waitForPort(final int port, boolean isFree) {
+    public static boolean waitForPort(final int port, final long timeoutMs, boolean isFree) {
         final long start = System.currentTimeMillis();
-        long timeout = SECONDS.toMillis(10);
 
-        while (System.currentTimeMillis() - start < timeout) {
+        while (System.currentTimeMillis() - start < timeoutMs) {
             if (isPortAvailable(port) == isFree) {
                 return true;
             }
             Thread.yield();
         }
-        return false;
+        return timeoutMs <= 0;
     }
 
     private static boolean isPortAvailable(int port) {

@@ -25,6 +25,7 @@ import static berlin.yuna.natsserver.config.NatsServerConfig.PASS;
 import static berlin.yuna.natsserver.config.NatsServerConfig.PORT;
 import static berlin.yuna.natsserver.config.NatsServerConfig.USER;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -61,7 +62,7 @@ class NatsComponentTest {
     void natsServer_withoutConfig_shouldStartWithDefaultValues() {
         Nats nats = new Nats().config(HB_FAIL_COUNT, "5").port(4238).source(natsSource);
         assertThat(nats.source(), is(equalTo(natsSource)));
-        nats.tryStart();
+        nats.tryStart(SECONDS.toMillis(10));
         nats.stop();
         assertThat(nats.toString().length(), is(greaterThan(1)));
     }
@@ -99,8 +100,8 @@ class NatsComponentTest {
     void natsServer_duplicateStart_shouldNotRunIntroExceptionOrInterrupt() throws IOException {
         Nats nats = new Nats(4231).source(natsSource);
         nats.start();
-        nats.start();
-        nats.stop(true);
+        nats.start(SECONDS.toMillis(10));
+        nats.stop(SECONDS.toMillis(10));
     }
 
     @Test
