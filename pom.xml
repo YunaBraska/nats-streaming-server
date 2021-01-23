@@ -6,18 +6,18 @@
 
     <groupId>berlin.yuna</groupId>
     <artifactId>nats-streaming-server</artifactId>
-    <version>0.20.5</version>
+    <version>0.20.6</version>
     <packaging>jar</packaging>
 
     <name>nats-streaming-server</name>
     <description>Nats streaming server for testing which contains the original Nats streaming server
     </description>
-    <url>https://github.com/YunaBraska/nats-streaming-server-embedded</url>
+    <url>https://github.com/YunaBraska/nats-streaming-server</url>
 
     <scm>
-        <connection>scm:git:ssh://git@github.com/YunaBraska/nats-streaming-server-embedded.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/YunaBraska/nats-streaming-server-embedded.git</developerConnection>
-        <url>https://github.com/YunaBraska/nats-streaming-server-embedded.git</url>
+        <connection>scm:git:ssh://git@github.com/YunaBraska/nats-streaming-server.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/YunaBraska/nats-streaming-server.git</developerConnection>
+        <url>https://github.com/YunaBraska/nats-streaming-server.git</url>
     </scm>
 
     <developers>
