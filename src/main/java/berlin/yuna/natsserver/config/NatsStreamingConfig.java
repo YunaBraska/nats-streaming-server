@@ -1,6 +1,6 @@
 package berlin.yuna.natsserver.config;
 
-public enum NatsServerConfig {
+public enum NatsStreamingConfig {
 
     //Streaming Server Options
     CLUSTER_ID("test-cluster", "[STRING] Cluster ID (default: test-cluster)"),
@@ -84,10 +84,11 @@ public enum NatsServerConfig {
     //NATS Server Logging Options
     LOG(null, "[STRING] File to redirect log output"),
     LOGTIME(true, "[BOOL] Timestamp log entries (default: true)"),
-    SYSLOG(null, "[STRING] Enable syslog as log method"),
+    SYSLOG(null, "[BOOL] Enable syslog as log method"),
+    SYSLOG_NAME(null, "[STRING] On Windows, when running several servers as a service, use this name for the event source"),
     REMOTE_SYSLOG(null, "[STRING] Syslog server addr (udp://localhost:514)"),
-    DEBUG(false, "[BOOL] Enable debugging output"),
-    TRACE(false, "[BOOL] Trace the raw protocol"),
+    DEBUG(false, "[/] Enable debugging output"),
+    TRACE(false, "[/] Trace the raw protocol"),
 
     //NATS Server Authorization Options
     USER(null, "[STRING] User required for connections"),
@@ -108,7 +109,7 @@ public enum NatsServerConfig {
     private final Object defaultValue;
     private final String description;
 
-    NatsServerConfig(Object defaultValue, String description) {
+    NatsStreamingConfig(Object defaultValue, String description) {
         this.defaultValue = defaultValue;
         this.description = description;
     }

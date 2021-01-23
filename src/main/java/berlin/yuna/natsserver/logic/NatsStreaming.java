@@ -3,9 +3,9 @@ package berlin.yuna.natsserver.logic;
 import berlin.yuna.clu.logic.SystemUtil;
 import berlin.yuna.clu.logic.SystemUtil.OperatingSystem;
 import berlin.yuna.clu.logic.Terminal;
-import berlin.yuna.natsserver.config.NatsServerConfig;
-import berlin.yuna.natsserver.config.NatsServerSourceConfig;
-import berlin.yuna.natsserver.model.exception.NatsDownloadException;
+import berlin.yuna.natsserver.config.NatsStreamingSourceConfig;
+import berlin.yuna.natsserver.config.NatsStreamingConfig;
+import berlin.yuna.natsserver.model.exception.NatsStreamingDownloadException;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -29,7 +29,7 @@ import java.util.zip.ZipFile;
 import static berlin.yuna.clu.logic.SystemUtil.OperatingSystem.WINDOWS;
 import static berlin.yuna.clu.logic.SystemUtil.getOsType;
 import static berlin.yuna.clu.logic.SystemUtil.killProcessByName;
-import static berlin.yuna.natsserver.config.NatsServerConfig.PORT;
+import static berlin.yuna.natsserver.config.NatsStreamingConfig.PORT;
 import static java.nio.channels.Channels.newChannel;
 import static java.nio.file.attribute.PosixFilePermission.OTHERS_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OTHERS_READ;
@@ -42,102 +42,97 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * {@link Nats}
- *
- * @author Yuna Morgenstern
- * @see OperatingSystem
- * @see Nats
- * @since 1.0
+ * {@link NatsStreaming}
  */
 @SuppressWarnings({"unused", "UnusedReturnValue"})
-public class Nats {
+public class NatsStreaming {
 
     /**
-     * simpleName from {@link Nats} class
+     * simpleName from {@link NatsStreaming} class
      */
     protected final String name;
-    protected static final Logger LOG = getLogger(Nats.class);
+    protected static final Logger LOG = getLogger(NatsStreaming.class);
     protected static final OperatingSystem OPERATING_SYSTEM = getOsType();
     protected static final String TMP_DIR = System.getProperty("java.io.tmpdir");
 
     private Process process;
-    private String source = NatsServerSourceConfig.valueOf(getOsType().toString().replace("UNKNOWN", "DEFAULT")).getDefaultValue();
-    private Map<NatsServerConfig, String> natsServerConfig = getDefaultConfig();
+    private String source = NatsStreamingSourceConfig.valueOf(getOsType().toString().replace("UNKNOWN", "DEFAULT")).getDefaultValue();
+    private Map<NatsStreamingConfig, String> config = getDefaultConfig();
 
     /**
-     * Create {@link Nats} without any start able configuration
+     * Create {@link NatsStreaming} without any start able configuration
      */
-    public Nats() {
-        name = Nats.class.getSimpleName() + "server";
+    public NatsStreaming() {
+        name = NatsStreaming.class.getSimpleName() + "server";
     }
 
     /**
-     * Create {@link Nats} with simplest start able configuration
+     * Create {@link NatsStreaming} with simplest start able configuration
      *
-     * @param port start port - common default port is 4222
+     * @param port {@code -1} for random port
      */
-    public Nats(int port) {
+    public NatsStreaming(int port) {
         this();
-        natsServerConfig.put(PORT, String.valueOf(port));
+        config.put(PORT, String.valueOf(port < 1? getNextFreePort() : port));
     }
 
     /**
-     * Create custom {@link Nats} with simplest configuration {@link Nats#setNatsServerConfig(String...)}
+     * Create custom {@link NatsStreaming} with simplest configuration {@link NatsStreaming#setConfig(String...)}
      *
-     * @param natsServerConfig passes the original parameters to the server. example: port:4222, user:admin, password:admin
+     * @param config passes the original parameters to the server. example: port:4222, user:admin, password:admin
      */
-    public Nats(final String... natsServerConfig) {
+    public NatsStreaming(final String... config) {
         this();
-        this.setNatsServerConfig(natsServerConfig);
+        this.setConfig(config);
     }
 
     /**
      * GetNatServerConfig
      *
-     * @return the {@link Nats} configuration but not the config of the real PID
+     * @return the {@link NatsStreaming} configuration
      */
-    public Map<NatsServerConfig, String> getNatsServerConfig() {
-        return natsServerConfig;
+    public Map<NatsStreamingConfig, String> getConfig() {
+        return config;
     }
 
     /**
      * Sets a single condig value
      *
-     * @return the {@link Nats} configuration but not the config of the real PID
+     * @return the {@link NatsStreaming} configuration
      */
-    public Nats config(final NatsServerConfig key, final String value) {
-        natsServerConfig.put(key, value);
+    public NatsStreaming config(final NatsStreamingConfig key, final String value) {
+        config.put(key, value);
         return this;
     }
 
     /**
      * Passes the original parameters to the server on startup
      *
-     * @param natsServerConfig passes the original parameters to the server.
-     * @return {@link Nats}
-     * @see Nats#setNatsServerConfig(String...)
-     * @see NatsServerConfig
+     * @param config passes the original parameters to the server.
+     * @return {@link NatsStreaming}
+     * @see NatsStreaming#setConfig(String...)
+     * @see NatsStreamingConfig
      */
-    public Nats setNatsServerConfig(final Map<NatsServerConfig, String> natsServerConfig) {
-        this.natsServerConfig = natsServerConfig;
+    public NatsStreaming setConfig(final Map<NatsStreamingConfig, String> config) {
+        this.config = config;
         return this;
     }
 
     /**
      * Passes the original parameters to the server on startup
      *
-     * @param natsServerConfigArray example: port:4222, user:admin, password:admin
-     * @return {@link Nats}
-     * @see NatsServerConfig
+     * @param config example: port:4222, user:admin, password:admin
+     * @return {@link NatsStreaming}
+     * @see NatsStreamingConfig
      */
-    public Nats setNatsServerConfig(final String... natsServerConfigArray) {
-        for (String property : natsServerConfigArray) {
+    public NatsStreaming setConfig(final String... config) {
+        for (String property : config) {
             String[] pair = property.split(":");
             if (isEmpty(property) || pair.length != 2) {
                 LOG.error("Could not parse property [{}] pair length [{}]", property, pair.length);
                 continue;
             }
-            natsServerConfig.put(NatsServerConfig.valueOf(pair[0].toUpperCase().replace("-", "")), pair[1]);
+            this.config.put(NatsStreamingConfig.valueOf(pair[0].toUpperCase().replace("-", "")), pair[1]);
         }
         return this;
     }
@@ -148,23 +143,23 @@ public class Nats {
 
 
     /**
-     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link Nats#setNatsServerConfig(String...)}
+     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link NatsStreaming#setConfig(String...)}
      * Throws all exceptions as {@link RuntimeException}
      *
-     * @return {@link Nats}
+     * @return {@link NatsStreaming}
      */
-    public Nats tryStart() {
+    public NatsStreaming tryStart() {
         return tryStart(SECONDS.toMillis(10));
     }
 
     /**
-     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link Nats#setNatsServerConfig(String...)}
+     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link NatsStreaming#setConfig(String...)}
      * Throws all exceptions as {@link RuntimeException}
      *
      * @param timeoutMs defines the start up timeout {@code -1} no timeout, else waits until port up
-     * @return {@link Nats}
+     * @return {@link NatsStreaming}
      */
-    public Nats tryStart(final long timeoutMs) {
+    public NatsStreaming tryStart(final long timeoutMs) {
         try {
             start(timeoutMs);
             return this;
@@ -174,27 +169,27 @@ public class Nats {
     }
 
     /**
-     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link Nats#setNatsServerConfig(String...)}
+     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link NatsStreaming#setConfig(String...)}
      *
-     * @return {@link Nats}
-     * @throws IOException              if {@link Nats} is not found or unsupported on the {@link OperatingSystem}
+     * @return {@link NatsStreaming}
+     * @throws IOException              if {@link NatsStreaming} is not found or unsupported on the {@link OperatingSystem}
      * @throws BindException            if port is already taken
-     * @throws PortUnreachableException if {@link Nats} is not starting cause port is not free
+     * @throws PortUnreachableException if {@link NatsStreaming} is not starting cause port is not free
      */
-    public Nats start() throws IOException {
+    public NatsStreaming start() throws IOException {
         return start(SECONDS.toMillis(10));
     }
 
     /**
-     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link Nats#setNatsServerConfig(String...)}
+     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link NatsStreaming#setConfig(String...)}
      *
      * @param timeoutMs defines the start up timeout {@code -1} no timeout, else waits until port up
-     * @return {@link Nats}
-     * @throws IOException              if {@link Nats} is not found or unsupported on the {@link OperatingSystem}
+     * @return {@link NatsStreaming}
+     * @throws IOException              if {@link NatsStreaming} is not found or unsupported on the {@link OperatingSystem}
      * @throws BindException            if port is already taken
-     * @throws PortUnreachableException if {@link Nats} is not starting cause port is not free
+     * @throws PortUnreachableException if {@link NatsStreaming} is not starting cause port is not free
      */
-    public Nats start(final long timeoutMs) throws IOException {
+    public NatsStreaming start(final long timeoutMs) throws IOException {
         if (process != null) {
             LOG.error("[{}] is already running", name);
             return this;
@@ -230,23 +225,23 @@ public class Nats {
     }
 
     /**
-     * Stops the {@link ProcessBuilder} and kills the {@link Nats}
-     * Only a log error will occur if the {@link Nats} were never started
+     * Stops the {@link ProcessBuilder} and kills the {@link NatsStreaming}
+     * Only a log error will occur if the {@link NatsStreaming} were never started
      *
-     * @return {@link Nats}
+     * @return {@link NatsStreaming}
      */
-    public Nats stop() {
+    public NatsStreaming stop() {
         return stop(-1);
     }
 
     /**
-     * Stops the {@link ProcessBuilder} and kills the {@link Nats}
-     * Only a log error will occur if the {@link Nats} were never started
+     * Stops the {@link ProcessBuilder} and kills the {@link NatsStreaming}
+     * Only a log error will occur if the {@link NatsStreaming} were never started
      *
      * @param timeoutMs defines the tear down timeout, {@code -1} no timeout, else waits until port is free again
-     * @return {@link Nats}
+     * @return {@link NatsStreaming}
      */
-    public Nats stop(final long timeoutMs) {
+    public NatsStreaming stop(final long timeoutMs) {
         try {
             LOG.info("Stopping [{}]", name);
             process.destroy();
@@ -264,13 +259,13 @@ public class Nats {
     }
 
     /**
-     * Gets the port out of the configuration not from the real PID
+     * Gets the port out of the configuration
      *
      * @return configured port of the server
      * @throws RuntimeException with {@link ConnectException} when there is no port configured
      */
     public int port() {
-        String port = natsServerConfig.get(PORT);
+        String port = config.get(PORT);
         if (port != null) {
             return Integer.parseInt(port);
         }
@@ -278,23 +273,24 @@ public class Nats {
     }
 
     /**
-     * Sets the port out of the configuration not from the real PID
+     * Sets the port out of the configuration
      *
-     * @return {@link Nats}
+     * @param port {@code -1} for random port
+     * @return {@link NatsStreaming}
      * @throws RuntimeException with {@link ConnectException} when there is no port configured
      */
-    public Nats port(int port) {
-        natsServerConfig.put(PORT, String.valueOf(port));
+    public NatsStreaming port(int port) {
+        config.put(PORT, String.valueOf(port < 1? getNextFreePort() : port));
         return this;
     }
 
     /**
      * Url to find nats server source
      *
-     * @param natsServerUrl url of the source {@link NatsServerSourceConfig}
-     * @return {@link Nats}
+     * @param natsServerUrl url of the source {@link NatsStreamingSourceConfig}
+     * @return {@link NatsStreaming}
      */
-    public Nats source(final String natsServerUrl) {
+    public NatsStreaming source(final String natsServerUrl) {
         this.source = natsServerUrl;
         return this;
     }
@@ -328,7 +324,7 @@ public class Nats {
                 fos.getChannel().transferFrom(newChannel(new URL(source).openStream()), 0, Long.MAX_VALUE);
                 return setExecutable(unzip(zipFile, tmpPath.toFile()));
             } catch (Exception e) {
-                throw new NatsDownloadException(e);
+                throw new NatsStreamingDownloadException(e);
             }
         }
         LOG.info("Finished download natsServer unpacked to [{}]", tmpPath.toUri());
@@ -382,7 +378,7 @@ public class Nats {
     private String prepareCommand(Path natsServerPath) {
         StringBuilder command = new StringBuilder();
         command.append(natsServerPath.toString());
-        for (Entry<NatsServerConfig, String> entry : getNatsServerConfig().entrySet()) {
+        for (Entry<NatsStreamingConfig, String> entry : getConfig().entrySet()) {
             String key = entry.getKey().getKey();
 
             if (isEmpty(entry.getValue())) {
@@ -393,19 +389,40 @@ public class Nats {
             command.append(" ");
 
             command.append(key);
-            command.append(entry.getValue().trim().toLowerCase());
+            if(!entry.getKey().getDescription().startsWith("[/]")) {
+                command.append(entry.getValue().trim().toLowerCase());
+            }
         }
         return command.toString();
     }
 
-    private Map<NatsServerConfig, String> getDefaultConfig() {
-        final Map<NatsServerConfig, String> defaultConfig = new EnumMap<>(NatsServerConfig.class);
-        for (NatsServerConfig natsConfig : NatsServerConfig.values()) {
+    private Map<NatsStreamingConfig, String> getDefaultConfig() {
+        final Map<NatsStreamingConfig, String> defaultConfig = new EnumMap<>(NatsStreamingConfig.class);
+        for (NatsStreamingConfig natsConfig : NatsStreamingConfig.values()) {
             if (natsConfig.getDefaultValue() != null) {
                 defaultConfig.put(natsConfig, natsConfig.getDefaultValue().toString());
             }
         }
         return defaultConfig;
+    }
+
+    private int getNextFreePort() {
+        for (int i = 1; i < 277; i++) {
+            final int port = i + (int) PORT.getDefaultValue();
+            if (!isPortInUse(port)) {
+                return port;
+            }
+        }
+        throw new IllegalStateException("Could not find any free port");
+    }
+
+    private boolean isPortInUse(final int portNumber) {
+        try {
+            new Socket("localhost", portNumber).close();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override

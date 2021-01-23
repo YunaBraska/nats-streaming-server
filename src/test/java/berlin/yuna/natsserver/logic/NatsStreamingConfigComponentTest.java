@@ -1,9 +1,8 @@
 package berlin.yuna.natsserver.logic;
 
 import berlin.yuna.clu.logic.Terminal;
-import berlin.yuna.natsserver.config.NatsServerConfig;
-import berlin.yuna.natsserver.config.NatsServerSourceConfig;
-import org.junit.jupiter.api.Disabled;
+import berlin.yuna.natsserver.config.NatsStreamingConfig;
+import berlin.yuna.natsserver.config.NatsStreamingSourceConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -37,14 +36,14 @@ import static org.hamcrest.Matchers.empty;
 
 @Tag("IntegrationTest")
 @DisplayName("NatsServer ConfigTest")
-class NatsConfigComponentTest {
+class NatsStreamingConfigComponentTest {
 
     @Test
     @DisplayName("Compare nats with java config")
-    void compareNatsServerConfig() throws IOException {
+    void compareNatsConfig() throws IOException {
         updateNatsVersion();
-        Files.deleteIfExists(new Nats().getNatsServerPath(getOsType()));
-        Path natsServerPath = new Nats(4248).getNatsServerPath(getOsType());
+        Files.deleteIfExists(new NatsStreaming().getNatsServerPath(getOsType()));
+        Path natsServerPath = new NatsStreaming(4248).getNatsServerPath(getOsType());
 
         StringBuilder console = new StringBuilder();
 
@@ -52,7 +51,7 @@ class NatsConfigComponentTest {
         console.append(terminal.consoleInfo()).append(terminal.consoleError());
 
         List<String> consoleConfigKeys = readConfigKeys(console.toString());
-        List<String> javaConfigKeys = stream(NatsServerConfig.values()).map(Enum::name).collect(Collectors.toList());
+        List<String> javaConfigKeys = stream(NatsStreamingConfig.values()).map(Enum::name).collect(Collectors.toList());
 
         Set<String> missingConfigInJava = getNotMatchingEntities(consoleConfigKeys, javaConfigKeys);
 
@@ -64,17 +63,17 @@ class NatsConfigComponentTest {
     @Test
     @DisplayName("Compare config key with one dash")
     void getKey_WithOneDash_ShouldBeSuccessful() {
-        assertThat(NatsServerConfig.SECURE.getKey(), is(equalTo("-secure ")));
+        assertThat(NatsStreamingConfig.SECURE.getKey(), is(equalTo("-secure ")));
     }
 
     @Test
     @DisplayName("Compare config key with equal sign")
     void getKey_WithBoolean_ShouldAddOneEqualSign() {
-        assertThat(NatsServerConfig.CLUSTERED.getKey(), is(equalTo("--clustered=")));
+        assertThat(NatsStreamingConfig.CLUSTERED.getKey(), is(equalTo("--clustered=")));
     }
 
     private void updateNatsVersion() throws IOException {
-        final Path configPath = Files.walk(FileSystems.getDefault().getPath(System.getProperty("user.dir")), 99).filter(path -> path.getFileName().toString().equalsIgnoreCase(NatsServerSourceConfig.class.getSimpleName() + ".java")).findFirst().orElse(null);
+        final Path configPath = Files.walk(FileSystems.getDefault().getPath(System.getProperty("user.dir")), 99).filter(path -> path.getFileName().toString().equalsIgnoreCase(NatsStreamingSourceConfig.class.getSimpleName() + ".java")).findFirst().orElse(null);
         URL url = new URL("https://api.github.com/repos/nats-io/nats-streaming-server/releases/latest");
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("GET");
@@ -91,9 +90,12 @@ class NatsConfigComponentTest {
     }
 
     private Set<String> getNotMatchingEntities(final List<String> list1, final List<String> list2) {
-        Set<String> noMatches = new HashSet<>();
+        final Set<String> noMatches = new HashSet<>();
         for (String entity : list1) {
-            if (!list2.contains(entity)) {
+            if (!entity.equalsIgnoreCase("help")
+                    && !entity.equalsIgnoreCase("version")
+                    && !entity.equalsIgnoreCase("help_tls")
+                    && !list2.contains(entity)) {
                 noMatches.add(entity);
             }
         }
@@ -101,10 +103,11 @@ class NatsConfigComponentTest {
     }
 
     private List<String> readConfigKeys(final String console) {
-        List<String> allMatches = new ArrayList<>();
-        Matcher m = Pattern.compile("-([a-z_]*)(\\s+|=)<[^,]").matcher(console);
+        final List<String> allMatches = new ArrayList<>();
+        final Matcher m = Pattern.compile("(--(?<dd>[a-z_]+))|(-(?<d>[a-z_]+)\\s*[<=])").matcher(console);
         while (m.find()) {
-            allMatches.add(m.group(1).toUpperCase());
+            final String group = m.group("dd");
+            allMatches.add((group == null? m.group("d") : group).toUpperCase());
         }
         return allMatches;
     }

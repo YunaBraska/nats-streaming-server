@@ -1,7 +1,7 @@
 package berlin.yuna.natsserver.config;
 
 @SuppressWarnings("unused")
-public enum NatsServerSourceConfig {
+public enum NatsStreamingSourceConfig {
 
     //Streaming Server Options
     ARM("https://github.com/nats-io/nats-streaming-server/releases/download/#VERSION#/nats-streaming-server-#VERSION#-linux-arm64.zip", "[STRING] ARM SOURCE URL"),
@@ -17,7 +17,7 @@ public enum NatsServerSourceConfig {
     private final String defaultValue;
     private final String description;
 
-    NatsServerSourceConfig(String defaultValue, String description) {
+    NatsStreamingSourceConfig(String defaultValue, String description) {
         this.defaultValue = defaultValue;
         this.description = description;
     }
