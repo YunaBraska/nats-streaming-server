@@ -3,8 +3,8 @@ package berlin.yuna.natsserver.logic;
 import berlin.yuna.clu.logic.SystemUtil;
 import berlin.yuna.clu.logic.SystemUtil.OperatingSystem;
 import berlin.yuna.clu.logic.Terminal;
-import berlin.yuna.natsserver.config.NatsStreamingSourceConfig;
 import berlin.yuna.natsserver.config.NatsStreamingConfig;
+import berlin.yuna.natsserver.config.NatsStreamingSourceConfig;
 import berlin.yuna.natsserver.model.exception.NatsStreamingDownloadException;
 import org.slf4j.Logger;
 
@@ -23,6 +23,8 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.MissingFormatArgumentException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -30,6 +32,7 @@ import static berlin.yuna.clu.logic.SystemUtil.OperatingSystem.WINDOWS;
 import static berlin.yuna.clu.logic.SystemUtil.getOsType;
 import static berlin.yuna.clu.logic.SystemUtil.killProcessByName;
 import static berlin.yuna.natsserver.config.NatsStreamingConfig.PORT;
+import static berlin.yuna.natsserver.config.NatsStreamingConfig.SIGNAL;
 import static java.nio.channels.Channels.newChannel;
 import static java.nio.file.attribute.PosixFilePermission.OTHERS_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OTHERS_READ;
@@ -50,10 +53,12 @@ public class NatsStreaming {
     /**
      * simpleName from {@link NatsStreaming} class
      */
+    protected int pid = -1;
     protected final String name;
     protected static final Logger LOG = getLogger(NatsStreaming.class);
     protected static final OperatingSystem OPERATING_SYSTEM = getOsType();
     protected static final String TMP_DIR = System.getProperty("java.io.tmpdir");
+    protected static final Pattern PATTERN_PID = Pattern.compile("\\[(?<pid>\\d+)?\\]");
 
     private Process process;
     private String source = NatsStreamingSourceConfig.valueOf(getOsType().toString().replace("UNKNOWN", "DEFAULT")).getDefaultValue();
@@ -73,7 +78,7 @@ public class NatsStreaming {
      */
     public NatsStreaming(int port) {
         this();
-        config.put(PORT, String.valueOf(port < 1? getNextFreePort() : port));
+        config.put(PORT, String.valueOf(port < 1 ? getNextFreePort() : port));
     }
 
     /**
@@ -201,7 +206,7 @@ public class NatsStreaming {
 
         Path natsServerPath = getNatsServerPath(OPERATING_SYSTEM);
         SystemUtil.setFilePermissions(natsServerPath, OWNER_EXECUTE, OTHERS_EXECUTE, OWNER_READ, OTHERS_READ, OWNER_WRITE, OTHERS_WRITE);
-        LOG.info("Starting [{}] port [{}] version [{}]", name, port(), OPERATING_SYSTEM);
+        LOG.debug("Starting [{}] port [{}] version [{}]", name, port(), OPERATING_SYSTEM);
 
         String command = prepareCommand(natsServerPath);
 
@@ -220,7 +225,8 @@ public class NatsStreaming {
                     + "\n" + terminal.consoleInfo()
                     + "\n" + terminal.consoleError());
         }
-        LOG.info("Started [{}] port [{}] version [{}]", name, port(), OPERATING_SYSTEM);
+        setPid(terminal);
+        LOG.info("Started [{}] port [{}] version [{}] pid [{}]", name, port(), OPERATING_SYSTEM, pid);
         return this;
     }
 
@@ -244,6 +250,13 @@ public class NatsStreaming {
     public NatsStreaming stop(final long timeoutMs) {
         try {
             LOG.info("Stopping [{}]", name);
+            if (pid > 0) {
+                new Terminal()
+                        .consumerInfo(LOG::info)
+                        .consumerError(LOG::error)
+                        .breakOnError(false)
+                        .execute(getNatsServerPath(OPERATING_SYSTEM).toString() + " " + SIGNAL.getKey() + " stop=" + pid);
+            }
             process.destroy();
             process.waitFor();
         } catch (NullPointerException | InterruptedException ignored) {
@@ -280,7 +293,7 @@ public class NatsStreaming {
      * @throws RuntimeException with {@link ConnectException} when there is no port configured
      */
     public NatsStreaming port(int port) {
-        config.put(PORT, String.valueOf(port < 1? getNextFreePort() : port));
+        config.put(PORT, String.valueOf(port < 1 ? getNextFreePort() : port));
         return this;
     }
 
@@ -302,6 +315,10 @@ public class NatsStreaming {
         return source;
     }
 
+    public int getPid() {
+        return pid;
+    }
+
     /**
      * Gets Nats server path
      *
@@ -312,6 +329,13 @@ public class NatsStreaming {
                 operatingSystem + File.separator +
                 name.toLowerCase() + (operatingSystem == WINDOWS ? ".exe" : "");
         return downloadNats(targetPath);
+    }
+
+    private void setPid(Terminal terminal) {
+        final Matcher matcher = PATTERN_PID.matcher(terminal.consoleInfo());
+        if (matcher.find()) {
+            pid = Integer.parseInt(matcher.group("pid"));
+        }
     }
 
     private Path downloadNats(final String targetPath) {
@@ -389,7 +413,7 @@ public class NatsStreaming {
             command.append(" ");
 
             command.append(key);
-            if(!entry.getKey().getDescription().startsWith("[/]")) {
+            if (!entry.getKey().getDescription().startsWith("[/]")) {
                 command.append(entry.getValue().trim().toLowerCase());
             }
         }

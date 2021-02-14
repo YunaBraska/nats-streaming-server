@@ -108,6 +108,14 @@ class NatsStreamingComponentTest {
     }
 
     @Test
+    @DisplayName("Start multiple times")
+    void natsServer_multipleTimes_shouldBeOkay() throws IOException {
+        new NatsStreaming(4234).source(natsSource).start(SECONDS.toMillis(10)).stop(SECONDS.toMillis(10));
+        new NatsStreaming(4234).source(natsSource).start(SECONDS.toMillis(10)).stop(SECONDS.toMillis(10));
+        new NatsStreaming(4234).source(natsSource).start(SECONDS.toMillis(10)).stop(SECONDS.toMillis(10));
+    }
+
+    @Test
     @DisplayName("Unknown config [FAIL]")
     void natsServer_withWrongConfig_shouldNotStartAndThrowException() {
         assertThrows(
