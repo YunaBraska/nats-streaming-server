@@ -5,6 +5,8 @@ import berlin.yuna.clu.logic.SystemUtil.OperatingSystem;
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.natsserver.config.NatsStreamingConfig;
 import berlin.yuna.natsserver.config.NatsStreamingSourceConfig;
+import berlin.yuna.natsserver.model.exception.NatsFileReaderException;
+import berlin.yuna.natsserver.model.exception.NatsStartException;
 import berlin.yuna.natsserver.model.exception.NatsStreamingDownloadException;
 import org.slf4j.Logger;
 
@@ -16,6 +18,7 @@ import java.net.ConnectException;
 import java.net.PortUnreachableException;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,14 +26,12 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.MissingFormatArgumentException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static berlin.yuna.clu.logic.SystemUtil.OperatingSystem.WINDOWS;
 import static berlin.yuna.clu.logic.SystemUtil.getOsType;
-import static berlin.yuna.clu.logic.SystemUtil.killProcessByName;
+import static berlin.yuna.natsserver.config.NatsStreamingConfig.PID;
 import static berlin.yuna.natsserver.config.NatsStreamingConfig.PORT;
 import static berlin.yuna.natsserver.config.NatsStreamingConfig.SIGNAL;
 import static java.nio.channels.Channels.newChannel;
@@ -58,7 +59,6 @@ public class NatsStreaming {
     protected static final Logger LOG = getLogger(NatsStreaming.class);
     protected static final OperatingSystem OPERATING_SYSTEM = getOsType();
     protected static final String TMP_DIR = System.getProperty("java.io.tmpdir");
-    protected static final Pattern PATTERN_PID = Pattern.compile("\\[(?<pid>\\d+)?\\]");
 
     private Process process;
     private String source = NatsStreamingSourceConfig.valueOf(getOsType().toString().replace("UNKNOWN", "DEFAULT")).getDefaultValue();
@@ -78,17 +78,17 @@ public class NatsStreaming {
      */
     public NatsStreaming(int port) {
         this();
-        config.put(PORT, String.valueOf(port < 1 ? getNextFreePort() : port));
+        port(port);
     }
 
     /**
-     * Create custom {@link NatsStreaming} with simplest configuration {@link NatsStreaming#setConfig(String...)}
+     * Create custom {@link NatsStreaming} with simplest configuration {@link NatsStreaming#config(String...)}
      *
      * @param config passes the original parameters to the server. example: port:4222, user:admin, password:admin
      */
     public NatsStreaming(final String... config) {
         this();
-        this.setConfig(config);
+        this.config(config);
     }
 
     /**
@@ -96,16 +96,17 @@ public class NatsStreaming {
      *
      * @return the {@link NatsStreaming} configuration
      */
-    public Map<NatsStreamingConfig, String> getConfig() {
+    public Map<NatsStreamingConfig, String> config() {
         return config;
     }
 
     /**
-     * Sets a single condig value
+     * Sets a single config value
      *
      * @return the {@link NatsStreaming} configuration
      */
     public NatsStreaming config(final NatsStreamingConfig key, final String value) {
+        config.remove(key, value);
         config.put(key, value);
         return this;
     }
@@ -115,10 +116,10 @@ public class NatsStreaming {
      *
      * @param config passes the original parameters to the server.
      * @return {@link NatsStreaming}
-     * @see NatsStreaming#setConfig(String...)
+     * @see NatsStreaming#config(String...)
      * @see NatsStreamingConfig
      */
-    public NatsStreaming setConfig(final Map<NatsStreamingConfig, String> config) {
+    public NatsStreaming config(final Map<NatsStreamingConfig, String> config) {
         this.config = config;
         return this;
     }
@@ -130,25 +131,20 @@ public class NatsStreaming {
      * @return {@link NatsStreaming}
      * @see NatsStreamingConfig
      */
-    public NatsStreaming setConfig(final String... config) {
+    public NatsStreaming config(final String... config) {
         for (String property : config) {
             String[] pair = property.split(":");
             if (isEmpty(property) || pair.length != 2) {
                 LOG.error("Could not parse property [{}] pair length [{}]", property, pair.length);
                 continue;
             }
-            this.config.put(NatsStreamingConfig.valueOf(pair[0].toUpperCase().replace("-", "")), pair[1]);
+            config(NatsStreamingConfig.valueOf(pair[0].toUpperCase().replace("-", "")), pair[1]);
         }
         return this;
     }
 
-    private boolean isEmpty(String property) {
-        return property == null || property.trim().length() <= 0;
-    }
-
-
     /**
-     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link NatsStreaming#setConfig(String...)}
+     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link NatsStreaming#config(String...)}
      * Throws all exceptions as {@link RuntimeException}
      *
      * @return {@link NatsStreaming}
@@ -158,7 +154,7 @@ public class NatsStreaming {
     }
 
     /**
-     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link NatsStreaming#setConfig(String...)}
+     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link NatsStreaming#config(String...)}
      * Throws all exceptions as {@link RuntimeException}
      *
      * @param timeoutMs defines the start up timeout {@code -1} no timeout, else waits until port up
@@ -169,12 +165,12 @@ public class NatsStreaming {
             start(timeoutMs);
             return this;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new NatsStartException(e);
         }
     }
 
     /**
-     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link NatsStreaming#setConfig(String...)}
+     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link NatsStreaming#config(String...)}
      *
      * @return {@link NatsStreaming}
      * @throws IOException              if {@link NatsStreaming} is not found or unsupported on the {@link OperatingSystem}
@@ -186,7 +182,7 @@ public class NatsStreaming {
     }
 
     /**
-     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link NatsStreaming#setConfig(String...)}
+     * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link NatsStreaming#config(String...)}
      *
      * @param timeoutMs defines the start up timeout {@code -1} no timeout, else waits until port up
      * @return {@link NatsStreaming}
@@ -225,8 +221,7 @@ public class NatsStreaming {
                     + "\n" + terminal.consoleInfo()
                     + "\n" + terminal.consoleError());
         }
-        setPid(terminal);
-        LOG.info("Started [{}] port [{}] version [{}] pid [{}]", name, port(), OPERATING_SYSTEM, pid);
+        LOG.info("Started [{}] port [{}] version [{}] pid [{}]", name, port(), OPERATING_SYSTEM, readPid());
         return this;
     }
 
@@ -260,15 +255,12 @@ public class NatsStreaming {
             process.destroy();
             process.waitFor();
         } catch (NullPointerException | InterruptedException ignored) {
-            final String processName = getNatsServerPath(OPERATING_SYSTEM).getFileName().toString();
             LOG.warn("Could not find process to stop [{}]", name);
-            LOG.warn("Terminate by name [{}]", processName);
-            killProcessByName(processName);
         } finally {
             waitForPort(port(), timeoutMs, true);
             LOG.info("Stopped [{}]", name);
         }
-        return this;
+        return tryDeleteFile(pidFile());
     }
 
     /**
@@ -293,7 +285,7 @@ public class NatsStreaming {
      * @throws RuntimeException with {@link ConnectException} when there is no port configured
      */
     public NatsStreaming port(int port) {
-        config.put(PORT, String.valueOf(port < 1 ? getNextFreePort() : port));
+        config(PORT, String.valueOf(port < 1 ? getNextFreePort() : port));
         return this;
     }
 
@@ -315,8 +307,29 @@ public class NatsStreaming {
         return source;
     }
 
-    public int getPid() {
+    /**
+     * get process id
+     *
+     * @return process id from nats server
+     */
+    public int pid() {
         return pid;
+    }
+
+    public Path pidFile() {
+        return Paths.get(config.computeIfAbsent(
+                PID,
+                value -> Paths.get(TMP_DIR, name.toLowerCase(), port() + ".pid").toString())
+        );
+    }
+
+    /**
+     * Gets Nats server path
+     *
+     * @return Resource/{SIMPLE_CLASS_NAME}/{NATS_SERVER_VERSION}/{OPERATING_SYSTEM}/{SIMPLE_CLASS_NAME}
+     */
+    public Path natsPath() {
+        return getNatsServerPath(OPERATING_SYSTEM);
     }
 
     /**
@@ -331,11 +344,25 @@ public class NatsStreaming {
         return downloadNats(targetPath);
     }
 
-    private void setPid(Terminal terminal) {
-        final Matcher matcher = PATTERN_PID.matcher(terminal.consoleInfo());
-        if (matcher.find()) {
-            pid = Integer.parseInt(matcher.group("pid"));
+    private boolean isEmpty(String property) {
+        return property == null || property.trim().length() <= 0;
+    }
+
+    private NatsStreaming tryDeleteFile(final Path path) {
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException ignored) {
         }
+        return this;
+    }
+
+    private int readPid() {
+        try {
+            pid = Integer.parseInt(String.join(" ", Files.readAllLines(pidFile(), StandardCharsets.UTF_8)).trim());
+        } catch (IOException e) {
+            throw new NatsFileReaderException("Unable to read PID file [" + pidFile() + "]", e);
+        }
+        return pid;
     }
 
     private Path downloadNats(final String targetPath) {
@@ -355,14 +382,15 @@ public class NatsStreaming {
         return tmpPath;
     }
 
-    private void createParents(final Path tmpPath) {
+    private NatsStreaming createParents(final Path tmpPath) {
         try {
             Files.createDirectories(tmpPath.getParent());
         } catch (IOException ignored) {
         }
+        return this;
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @SuppressWarnings({"ResultOfMethodCallIgnored", "java:S899"})
     private Path setExecutable(final Path path) {
         path.toFile().setExecutable(true);
         return path;
@@ -371,9 +399,9 @@ public class NatsStreaming {
     private Path unzip(final File source, final File target) throws IOException {
         try (final ZipFile zipFile = new ZipFile(source)) {
             ZipEntry max = zipFile.stream().max(comparingLong(ZipEntry::getSize))
-                    .orElseThrow(() -> new IllegalStateException("File not found " + zipFile));
+                    .orElseThrow(() -> new IllegalStateException("File not found [" + zipFile + "]"));
             Files.copy(zipFile.getInputStream(max), target.toPath());
-            Files.delete(source.toPath());
+            tryDeleteFile(source.toPath());
             return target.toPath();
         }
     }
@@ -390,7 +418,7 @@ public class NatsStreaming {
         return timeoutMs <= 0;
     }
 
-    private static boolean isPortAvailable(int port) {
+    private static boolean isPortAvailable(final int port) {
         try {
             new Socket("localhost", port).close();
             return false;
@@ -399,10 +427,11 @@ public class NatsStreaming {
         }
     }
 
-    private String prepareCommand(Path natsServerPath) {
+    private String prepareCommand(final Path natsServerPath) {
         StringBuilder command = new StringBuilder();
         command.append(natsServerPath.toString());
-        for (Entry<NatsStreamingConfig, String> entry : getConfig().entrySet()) {
+        pidFile();
+        for (Entry<NatsStreamingConfig, String> entry : config().entrySet()) {
             String key = entry.getKey().getKey();
 
             if (isEmpty(entry.getValue())) {
