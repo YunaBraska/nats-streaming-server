@@ -12,7 +12,7 @@ public enum NatsStreamingSourceConfig {
     DEFAULT(LINUX.defaultValue, "[STRING] DEFAULT SOURCE URL"),
     ;
 
-    private static final String DEFAULT_VERSION = "v0.20.0";
+    private static final String DEFAULT_VERSION = "v0.21.0";
 
     private final String defaultValue;
     private final String description;
