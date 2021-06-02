@@ -6,7 +6,7 @@
 
     <groupId>berlin.yuna</groupId>
     <artifactId>nats-streaming-server</artifactId>
-    <version>0.20.16</version>
+    <version>0.20.17</version>
     <packaging>jar</packaging>
 
     <name>nats-streaming-server</name>
