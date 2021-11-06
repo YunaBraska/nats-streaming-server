@@ -24,8 +24,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static berlin.yuna.clu.logic.SystemUtil.getOsType;
 import static berlin.yuna.clu.logic.SystemUtil.readFile;
+import static berlin.yuna.clu.model.OsArch.ARCH_AMD;
+import static berlin.yuna.clu.model.OsArch.ARCH_ARM;
+import static berlin.yuna.clu.model.OsArch.ARCH_INTEL;
+import static berlin.yuna.clu.model.OsArch.ARCH_UNKNOWN;
+import static berlin.yuna.clu.model.OsArchType.AT_6;
+import static berlin.yuna.clu.model.OsArchType.AT_64;
+import static berlin.yuna.clu.model.OsArchType.AT_7;
+import static berlin.yuna.clu.model.OsArchType.AT_86;
+import static berlin.yuna.clu.model.OsType.OS_FREE_BSD;
+import static berlin.yuna.clu.model.OsType.OS_LINUX;
+import static berlin.yuna.clu.model.OsType.OS_MAC;
+import static berlin.yuna.clu.model.OsType.OS_MIPS;
+import static berlin.yuna.clu.model.OsType.OS_WINDOWS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
@@ -42,8 +54,8 @@ class NatsStreamingConfigComponentTest {
     @DisplayName("Compare nats with java config")
     void compareNatsConfig() throws IOException {
         updateNatsVersion();
-        Files.deleteIfExists(new NatsStreaming().getNatsServerPath(getOsType()));
-        Path natsServerPath = new NatsStreaming(4248).getNatsServerPath(getOsType());
+        Files.deleteIfExists(new NatsStreaming().getDefaultPath());
+        Path natsServerPath = new NatsStreaming(4248).getDefaultPath();
 
         StringBuilder console = new StringBuilder();
 
@@ -72,6 +84,28 @@ class NatsStreamingConfigComponentTest {
         assertThat(NatsStreamingConfig.CLUSTERED.getKey(), is(equalTo("--clustered=")));
     }
 
+    @Test
+    @DisplayName("Download url creation test")
+    void testDownloadUrl() {
+        final NatsStreamingSourceConfig url = NatsStreamingSourceConfig.URL;
+        assertThat(stripURL(url.getDefaultValue(OS_MAC, ARCH_AMD, AT_64)), is(equalTo("/nats-server-version-darwin-amd64.zip")));
+        assertThat(stripURL(url.getDefaultValue(OS_MAC, ARCH_AMD, AT_64)), is(equalTo("/nats-server-version-darwin-amd64.zip")));
+        assertThat(stripURL(url.getDefaultValue(OS_MAC, ARCH_ARM, AT_64)), is(equalTo("/nats-server-version-darwin-arm64.zip")));
+        assertThat(stripURL(url.getDefaultValue(OS_FREE_BSD, ARCH_AMD, AT_64)), is(equalTo("/nats-server-version-freebsd-amd64.zip")));
+        assertThat(stripURL(url.getDefaultValue(OS_FREE_BSD, ARCH_AMD, AT_64)), is(equalTo("/nats-server-version-freebsd-amd64.zip")));
+        assertThat(stripURL(url.getDefaultValue(OS_LINUX, ARCH_INTEL, AT_86)), is(equalTo("/nats-server-version-linux-386.zip")));
+        assertThat(stripURL(url.getDefaultValue(OS_LINUX, ARCH_ARM, AT_6)), is(equalTo("/nats-server-version-linux-arm6.zip")));
+        assertThat(stripURL(url.getDefaultValue(OS_LINUX, ARCH_ARM, AT_7)), is(equalTo("/nats-server-version-linux-arm7.zip")));
+        assertThat(stripURL(url.getDefaultValue(OS_LINUX, ARCH_ARM, AT_64)), is(equalTo("/nats-server-version-linux-arm64.zip")));
+        assertThat(stripURL(url.getDefaultValue(OS_MIPS, ARCH_UNKNOWN, AT_64)), is(equalTo("/nats-server-version-linux-mips64le.zip")));
+        assertThat(stripURL(url.getDefaultValue(OS_WINDOWS, ARCH_INTEL, AT_86)), is(equalTo("/nats-server-version-windows-386.zip")));
+        assertThat(stripURL(url.getDefaultValue(OS_WINDOWS, ARCH_AMD, AT_64)), is(equalTo("/nats-server-version-windows-amd64.zip")));
+    }
+
+    private String stripURL(final String url) {
+        return url.replaceFirst("(?<prefix>.*nats-streaming-server-.*?-)", "/nats-server-version-");
+    }
+
     private void updateNatsVersion() throws IOException {
         final Path configPath = Files.walk(FileSystems.getDefault().getPath(System.getProperty("user.dir")), 99).filter(path -> path.getFileName().toString().equalsIgnoreCase(NatsStreamingSourceConfig.class.getSimpleName() + ".java")).findFirst().orElse(null);
         URL url = new URL("https://api.github.com/repos/nats-io/nats-streaming-server/releases/latest");
@@ -81,8 +115,10 @@ class NatsStreamingConfigComponentTest {
         final String json = read(con.getInputStream());
         final Matcher matcher = Pattern.compile("\"tag_name\":\"(?<version>.*?)\"").matcher(json);
         if (matcher.find()) {
+            final String version = matcher.group("version");
             String content = readFile(requireNonNull(configPath));
-            content = content.replaceAll("DEFAULT_VERSION.*=.*", "DEFAULT_VERSION = \"" + matcher.group("version") + "\";");
+            content = content.replaceFirst("(?<prefix>\\/download\\/)(.*)(?<suffix>\\/)", "${prefix}" + version + "${suffix}");
+            content = content.replaceFirst("(?<prefix>\\/nats-server-)(.*?)(?<suffix>#)", "${prefix}" + version + "${suffix}");
             Files.write(configPath, content.getBytes());
         } else {
             throw new IllegalStateException("Could not update nats server version");
@@ -107,7 +143,7 @@ class NatsStreamingConfigComponentTest {
         final Matcher m = Pattern.compile("(--(?<dd>[a-z_]+))|(-(?<d>[a-z_]+)\\s*[<=])").matcher(console);
         while (m.find()) {
             final String group = m.group("dd");
-            allMatches.add((group == null? m.group("d") : group).toUpperCase());
+            allMatches.add((group == null ? m.group("d") : group).toUpperCase());
         }
         return allMatches;
     }

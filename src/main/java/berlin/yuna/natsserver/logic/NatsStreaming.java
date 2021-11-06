@@ -1,8 +1,10 @@
 package berlin.yuna.natsserver.logic;
 
 import berlin.yuna.clu.logic.SystemUtil;
-import berlin.yuna.clu.logic.SystemUtil.OperatingSystem;
 import berlin.yuna.clu.logic.Terminal;
+import berlin.yuna.clu.model.OsArch;
+import berlin.yuna.clu.model.OsArchType;
+import berlin.yuna.clu.model.OsType;
 import berlin.yuna.natsserver.config.NatsStreamingConfig;
 import berlin.yuna.natsserver.config.NatsStreamingSourceConfig;
 import berlin.yuna.natsserver.model.exception.NatsFileReaderException;
@@ -29,8 +31,10 @@ import java.util.MissingFormatArgumentException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static berlin.yuna.clu.logic.SystemUtil.OperatingSystem.WINDOWS;
-import static berlin.yuna.clu.logic.SystemUtil.getOsType;
+import static berlin.yuna.clu.logic.SystemUtil.OS;
+import static berlin.yuna.clu.logic.SystemUtil.OS_ARCH;
+import static berlin.yuna.clu.logic.SystemUtil.OS_ARCH_TYPE;
+import static berlin.yuna.clu.model.OsType.OS_WINDOWS;
 import static berlin.yuna.natsserver.config.NatsStreamingConfig.PID;
 import static berlin.yuna.natsserver.config.NatsStreamingConfig.PORT;
 import static berlin.yuna.natsserver.config.NatsStreamingConfig.SIGNAL;
@@ -57,11 +61,10 @@ public class NatsStreaming {
     protected int pid = -1;
     protected final String name;
     protected static final Logger LOG = getLogger(NatsStreaming.class);
-    protected static final OperatingSystem OPERATING_SYSTEM = getOsType();
     protected static final String TMP_DIR = System.getProperty("java.io.tmpdir");
 
     private Process process;
-    private String source = NatsStreamingSourceConfig.valueOf(getOsType().toString().replace("UNKNOWN", "DEFAULT")).getDefaultValue();
+    private String source = NatsStreamingSourceConfig.URL.getDefaultValue(OS, OS_ARCH, OS_ARCH_TYPE);
     private Map<NatsStreamingConfig, String> config = getDefaultConfig();
 
     /**
@@ -173,7 +176,7 @@ public class NatsStreaming {
      * Starts the server in {@link ProcessBuilder} with the given parameterConfig {@link NatsStreaming#config(String...)}
      *
      * @return {@link NatsStreaming}
-     * @throws IOException              if {@link NatsStreaming} is not found or unsupported on the {@link OperatingSystem}
+     * @throws IOException              if {@link NatsStreaming} is not found or unsupported on the {@link SystemUtil}
      * @throws BindException            if port is already taken
      * @throws PortUnreachableException if {@link NatsStreaming} is not starting cause port is not free
      */
@@ -186,7 +189,7 @@ public class NatsStreaming {
      *
      * @param timeoutMs defines the start up timeout {@code -1} no timeout, else waits until port up
      * @return {@link NatsStreaming}
-     * @throws IOException              if {@link NatsStreaming} is not found or unsupported on the {@link OperatingSystem}
+     * @throws IOException              if {@link NatsStreaming} is not found or unsupported on the {@link SystemUtil}
      * @throws BindException            if port is already taken
      * @throws PortUnreachableException if {@link NatsStreaming} is not starting cause port is not free
      */
@@ -200,9 +203,9 @@ public class NatsStreaming {
             throw new BindException("Address already in use [" + port() + "]");
         }
 
-        Path natsServerPath = getNatsServerPath(OPERATING_SYSTEM);
+        Path natsServerPath = getNatsServerPath(OS, OS_ARCH, OS_ARCH_TYPE);
         SystemUtil.setFilePermissions(natsServerPath, OWNER_EXECUTE, OTHERS_EXECUTE, OWNER_READ, OTHERS_READ, OWNER_WRITE, OTHERS_WRITE);
-        LOG.debug("Starting [{}] port [{}] version [{}]", name, port(), OPERATING_SYSTEM);
+        LOG.debug("Starting [{}] port [{}] version [{}]", name, port(), OS);
 
         String command = prepareCommand(natsServerPath);
 
@@ -221,7 +224,7 @@ public class NatsStreaming {
                     + "\n" + terminal.consoleInfo()
                     + "\n" + terminal.consoleError());
         }
-        LOG.info("Started [{}] port [{}] version [{}] pid [{}]", name, port(), OPERATING_SYSTEM, readPid());
+        LOG.info("Started [{}] port [{}] version [{}] pid [{}]", name, port(), OS, readPid());
         return this;
     }
 
@@ -250,7 +253,7 @@ public class NatsStreaming {
                         .consumerInfo(LOG::info)
                         .consumerError(LOG::error)
                         .breakOnError(false)
-                        .execute(getNatsServerPath(OPERATING_SYSTEM).toString() + " " + SIGNAL.getKey() + " stop=" + pid);
+                        .execute(getNatsServerPath(OS, OS_ARCH, OS_ARCH_TYPE).toString() + " " + SIGNAL.getKey() + " stop=" + pid);
             }
             process.destroy();
             process.waitFor();
@@ -329,7 +332,16 @@ public class NatsStreaming {
      * @return Resource/{SIMPLE_CLASS_NAME}/{NATS_SERVER_VERSION}/{OPERATING_SYSTEM}/{SIMPLE_CLASS_NAME}
      */
     public Path natsPath() {
-        return getNatsServerPath(OPERATING_SYSTEM);
+        return getNatsServerPath(OS, OS_ARCH, OS_ARCH_TYPE);
+    }
+
+    /**
+     * Gets Nats server path
+     *
+     * @return Resource/{SIMPLE_CLASS_NAME}/{NATS_SERVER_VERSION}/{OS}_{OS_ARCH}_{OS_ARCH_TYPE}/{SIMPLE_CLASS_NAME}
+     */
+    protected Path getDefaultPath() {
+        return getNatsServerPath(OS, OS_ARCH, OS_ARCH_TYPE);
     }
 
     /**
@@ -337,11 +349,13 @@ public class NatsStreaming {
      *
      * @return Resource/{SIMPLE_CLASS_NAME}/{NATS_SERVER_VERSION}/{OPERATING_SYSTEM}/{SIMPLE_CLASS_NAME}
      */
-    protected Path getNatsServerPath(final OperatingSystem operatingSystem) {
-        final String targetPath = name.toLowerCase() + File.separator +
-                operatingSystem + File.separator +
-                name.toLowerCase() + (operatingSystem == WINDOWS ? ".exe" : "");
-        return downloadNats(targetPath);
+    protected Path getNatsServerPath(final OsType os, final OsArch arch, final OsArchType archType) {
+        final String targetPath =
+                name + File.separator
+                        + name + "_" + os + "_" + arch + "_" + archType
+                        + (os == OS_WINDOWS ? ".exe" : "");
+        return downloadNats(targetPath.toLowerCase()
+                .replace("os_", "").replace("_at_", "").replace("_arch", ""));
     }
 
     private boolean isEmpty(String property) {
@@ -369,16 +383,16 @@ public class NatsStreaming {
         final Path tmpPath = Paths.get(TMP_DIR, targetPath);
         if (Files.notExists(tmpPath)) {
             final File zipFile = new File(tmpPath.getParent().toFile(), tmpPath.getFileName().toString() + ".zip");
-            LOG.info("Start download natsServer from [{}] to [{}]", source, zipFile);
             createParents(tmpPath);
+            LOG.info("Start download natsServer from [{}] to [{}]", source, zipFile);
             try (FileOutputStream fos = new FileOutputStream(zipFile)) {
                 fos.getChannel().transferFrom(newChannel(new URL(source).openStream()), 0, Long.MAX_VALUE);
+                LOG.info("Finished download natsServer unpacked to [{}]", tmpPath.toUri());
                 return setExecutable(unzip(zipFile, tmpPath.toFile()));
             } catch (Exception e) {
                 throw new NatsStreamingDownloadException(e);
             }
         }
-        LOG.info("Finished download natsServer unpacked to [{}]", tmpPath.toUri());
         return tmpPath;
     }
 
@@ -482,7 +496,7 @@ public class NatsStreaming {
     public String toString() {
         return name + "{" +
                 "NATS_SERVER_VERSION=" + source +
-                ", OPERATING_SYSTEM=" + OPERATING_SYSTEM +
+                ", OPERATING_SYSTEM=" + OS +
                 ", port=" + port() +
                 '}';
     }
