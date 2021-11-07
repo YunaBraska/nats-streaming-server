@@ -57,7 +57,7 @@ original [Nats streaming server](https://github.com/nats-io/nats-streaming-serve
 <dependency>
     <groupId>berlin.yuna</groupId>
     <artifactId>nats-streaming-server</artifactId>
-    <version>0.20.11</version>
+    <version>0.23.1</version>
 </dependency>
 ```
 [Get latest version][central_link]
