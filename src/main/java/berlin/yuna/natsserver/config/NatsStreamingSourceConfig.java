@@ -8,7 +8,7 @@ import berlin.yuna.clu.model.OsType;
 public enum NatsStreamingSourceConfig {
 
 
-    URL("https://github.com/nats-io/nats-streaming-server/releases/download/v0.23.0/nats-streaming-server-v0.23.0#SYSTEM#.zip", "[STRING] DEFAULT SOURCE URL");
+    URL("https://github.com/nats-io/nats-streaming-server/releases/download/v0.23.1/nats-streaming-server-v0.23.0#SYSTEM#.zip", "[STRING] DEFAULT SOURCE URL");
 
     private final String defaultValue;
     private final String description;
