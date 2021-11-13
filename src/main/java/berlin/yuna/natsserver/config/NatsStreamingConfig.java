@@ -1,5 +1,7 @@
 package berlin.yuna.natsserver.config;
 
+import berlin.yuna.natsserver.logic.NatsStreaming;
+
 public enum NatsStreamingConfig {
 
     //Streaming Server Options
@@ -104,7 +106,16 @@ public enum NatsStreamingConfig {
 
     //NATS Clustering Options
     ROUTES(null, "[STRING] Routes to solicit and connect"),
-    CLUSTER(null, "[STRING] Cluster URL for solicited routes");
+    CLUSTER(null, "[STRING] Cluster URL for solicited routes"),
+
+    //WRAPPER configs
+    NATS_SYSTEM(null, "[STRING] suffix for binary path"),
+    NATS_LOG_NAME(NatsStreaming.class.getSimpleName(), "[STRING] java wrapper name"),
+    NATS_STREAMING_VERSION("v0.23.1", "[STRING] Overwrites Nats server version on path"),
+    NATS_DOWNLOAD_URL("https://github.com/nats-io/nats-streaming-server/releases/download/%" + NATS_STREAMING_VERSION.name() + "%/nats-streaming-server-%" + NATS_STREAMING_VERSION.name() + "%-%" + NATS_SYSTEM.name() + "%.zip", "[STRING] Path to Nats binary or zip file"),
+    NATS_BINARY_PATH(null, "[STRING] Target Path to Nats binary or zip file - auto from " + NATS_DOWNLOAD_URL.name() + ""),
+    NATS_CONFIG_FILE(null, "[STRING] Additional property file with config value"),
+    NATS_ARGS(null, "[STRING] custom arguments separated by \\, or just space");
 
     private final Object defaultValue;
     private final String description;
@@ -114,12 +125,19 @@ public enum NatsStreamingConfig {
         this.description = description;
     }
 
-    public Object getDefaultValue() {
+    public Object valueRaw() {
         return defaultValue;
     }
 
-    public String getDescription() {
+    public String desc() {
         return description;
+    }
+
+    /**
+     * @return value as string
+     */
+    public String value() {
+        return defaultValue == null ? null : defaultValue.toString();
     }
 
     /**
@@ -127,10 +145,10 @@ public enum NatsStreamingConfig {
      *
      * @return key for command line
      */
-    public String getKey() {
+    public String key() {
         String key = name().toLowerCase();
-        key = getDescription().startsWith("-") ? "-" + key : "--" + key;
-        key = getDescription().startsWith("[BOOL]") ? key + "=" : key + " ";
+        key = desc().startsWith("-") ? "-" + key : "--" + key;
+        key = desc().startsWith("[BOOL]") ? key + "=" : key + " ";
         return key;
     }
 }

@@ -23,11 +23,11 @@ original [Nats streaming server](https://github.com/nats-io/nats-streaming-serve
 [coverage_shield]: https://img.shields.io/codeclimate/coverage/YunaBraska/nats-streaming-server?style=flat-square
 [coverage_link]: https://codeclimate.com/github/YunaBraska/nats-streaming-server/test_coverage
 [issues_shield]: https://img.shields.io/github/issues/YunaBraska/nats-streaming-server?style=flat-square
-[issues_link]: https://github.com/YunaBraska/nats-streaming-server/commits/master
+[issues_link]: https://github.com/YunaBraska/nats-streaming-server/commits/main
 [commit_shield]: https://img.shields.io/github/last-commit/YunaBraska/nats-streaming-server?style=flat-square
 [commit_link]: https://github.com/YunaBraska/nats-streaming-server/issues
 [license_shield]: https://img.shields.io/github/license/YunaBraska/nats-streaming-server?style=flat-square
-[license_link]: https://github.com/YunaBraska/nats-streaming-server/blob/master/LICENSE
+[license_link]: https://github.com/YunaBraska/nats-streaming-server/blob/main/LICENSE
 [dependency_shield]: https://img.shields.io/librariesio/github/YunaBraska/nats-streaming-server?style=flat-square
 [dependency_link]: https://libraries.io/github/YunaBraska/nats-streaming-server
 [central_shield]: https://img.shields.io/maven-central/v/berlin.yuna/nats-streaming-server?style=flat-square
@@ -42,65 +42,91 @@ original [Nats streaming server](https://github.com/nats-io/nats-streaming-serve
 [gitter_link]: https://gitter.im/nats-streaming-server/Lobby
 
 ### Family
-* Nats plain Java
+
+* Nats **plain Java**
   * [Nats-Server](https://github.com/YunaBraska/nats-server)
   * [Nats-Streaming-Server](https://github.com/YunaBraska/nats-streaming-server)
-* Nats for spring boot
+* Nats for **Spring Boot**
   * [Nats-Server-Embedded](https://github.com/YunaBraska/nats-server-embedded)
   * [Nats-Streaming-Server-Embedded](https://github.com/YunaBraska/nats-streaming-server-embedded)
-
 
 ### Usage
 
 ```xml
 
 <dependency>
-    <groupId>berlin.yuna</groupId>
-    <artifactId>nats-streaming-server</artifactId>
-    <version>0.23.1</version>
+  <groupId>berlin.yuna</groupId>
+  <artifactId>nats-streaming-server</artifactId>
+  <version>0.23.2</version>
 </dependency>
 ```
+
 [Get latest version][central_link]
 
+### Configuration priority
+
+1) Custom Arguments
+2) Java config
+3) Property File (*1)
+4) Environment Variables (*1)
+5) Default Config
+
+* *1 configs must start with "NATS_" and the additional option
+  from [NatsConfig](https://github.com/YunaBraska/nats-server/blob/main/src/main/java/berlin/yuna/natsserver/config/NatsConfig.java))*
+
 ### Common methods
+
 #### Getter
-| Name                                 | Description                                |
-|--------------------------------------|--------------------------------------------|
-| port                                 | Get configured port                        |
-| pid                                  | Get process id                             |
-| config                               | Get config map                             |
-| source                               | Get download url                           |
-| pidFile                              | Get file containing the process id         |
-| natsPath                             | Get nats target path                       |
+
+| Name                                 | Description                                      |
+|--------------------------------------|--------------------------------------------------|
+| binaryFile                           | Path to binary file                              |
+| downloadUrl                          | Download URL                                     |
+| port                                 | port (-1 == not started && random port)          |
+| pid                                  | process id (-1 == not started)                   |
+| pidFile                              | Path to PID file                                 |
+| config                               | Get config map                                   |
+| getValue                             | Get resolved config for a key                    |
 
 #### Setter
-| Name                                 | Description                                |
-|--------------------------------------|--------------------------------------------|
-| port(port)                           | Sets specific port (-1 = random port)      |
-| config(key, value)                   | Set specific config value                  |
-| config(Map<key, value>)              | Set config map                             |
-| config(key:value...)                 | Set config array as string                 |
-| source(customUrl)                    | Sets custom nats download url              |
+
+| Name                                 | Description                                      |
+|--------------------------------------|--------------------------------------------------|
+| config(key, value)                   | Set specific config value                        |
+| config(Map<key, value>)              | Set config map                                   |
+| config(key, value...)                | Set config array                                 |
+
+#### Others
+
+| Name                                 | Description                                      |
+|--------------------------------------|--------------------------------------------------|
+| start                                | Starts the nats server                           |
+| start(timeout)                       | Starts the nats server with custom timeout       |
+| tryStart()                           | Starts the nats server (mode = RuntimeException) |
+| stop()                               | Stops the nats server                            |
+| stop(timeout)                        | Stops the nats server with custom timeout        |
+| config(Map<key, value>)              | Set config map                                   |
+| config(key, value...)                | Set config array                                 |
 
 * All configurations are optional. (see all configs
-  here: [NatsStreamingConfig](https://github.com/YunaBraska/nats-streaming-server/blob/master/src/main/java/berlin/yuna/natsserver/config/NatsStreamingConfig.java)
-* Nats server default sources are described
-  here: [NatsStreamingSourceConfig](https://github.com/YunaBraska/nats-streaming-server/blob/master/src/main/java/berlin/yuna/natsserver/config/NatsStreamingSourceConfig.java)
+  here: [NatsStreamingConfig](https://github.com/YunaBraska/nats-streaming-server/blob/main/src/main/java/berlin/yuna/natsserver/config/NatsStreamingConfig.java)
 
 ### Example
 
 ```java
 public class MyNatsTest {
 
-    public static void main(String[] args) {
-        final Nats nats = new Nats()
-                .source("http://myOwnCachedNatsServerVersion")
-                .port(4222)
-                .config(USER, "yuna")
-                .config(PASS, "braska");
-        nats.start();
-        nats.stop();
-    }
+  public static void main(final String[] args) {
+    final NatsStreaming nats = new NatsStreaming()
+            .source("http://myOwnCachedNatsServerVersion")
+            .port(4222) //-1 for a random port
+            .config(
+                    USER, "yuna",
+                    PASS, "braska"
+            )
+            .start();
+    nats.stop();
+  }
 }
 ```
 
