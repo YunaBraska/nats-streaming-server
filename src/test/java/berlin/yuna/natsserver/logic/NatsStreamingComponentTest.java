@@ -1,9 +1,9 @@
 package berlin.yuna.natsserver.logic;
 
 import berlin.yuna.natsserver.config.NatsStreamingConfig;
-import berlin.yuna.natsserver.model.exception.NatsFileReaderException;
-import berlin.yuna.natsserver.model.exception.NatsStartException;
-import berlin.yuna.natsserver.model.exception.NatsStreamingDownloadException;
+import berlin.yuna.natsserver.model.NatsFileReaderException;
+import berlin.yuna.natsserver.model.NatsStartException;
+import berlin.yuna.natsserver.model.NatsStreamingDownloadException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,11 +20,13 @@ import java.util.Map;
 
 import static berlin.yuna.natsserver.config.NatsStreamingConfig.ADDR;
 import static berlin.yuna.natsserver.config.NatsStreamingConfig.AUTH;
+import static berlin.yuna.natsserver.config.NatsStreamingConfig.DEBUG;
 import static berlin.yuna.natsserver.config.NatsStreamingConfig.PASS;
 import static berlin.yuna.natsserver.config.NatsStreamingConfig.PORT;
 import static berlin.yuna.natsserver.config.NatsStreamingConfig.TRACE;
 import static berlin.yuna.natsserver.config.NatsStreamingConfig.USER;
-import static com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl.DEBUG;
+import static berlin.yuna.natsserver.model.MapValue.mapValueOf;
+import static berlin.yuna.natsserver.model.ValueSource.ENV;
 import static java.util.Objects.requireNonNull;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -73,24 +75,24 @@ class NatsStreamingComponentTest {
     void natsServer_configureConfig_shouldNotOverwriteOldConfig() {
         nats.config("user", "adminUser", "PAss", "adminPw");
 
-        assertThat(nats.config().get(USER), is(equalTo("adminUser")));
-        assertThat(nats.config().get(PASS), is(equalTo("adminPw")));
+        assertThat(nats.getValue(USER), is(equalTo("adminUser")));
+        assertThat(nats.getValue(PASS), is(equalTo("adminPw")));
 
         nats.config("user", "newUser");
-        assertThat(nats.config().get(USER), is(equalTo("newUser")));
-        assertThat(nats.config().get(PASS), is("adminPw"));
+        assertThat(nats.getValue(USER), is(equalTo("newUser")));
+        assertThat(nats.getValue(PASS), is("adminPw"));
 
         final Map<NatsStreamingConfig, String> newConfig = new HashMap<>();
         newConfig.put(USER, "oldUser");
         nats.config(newConfig);
-        assertThat(nats.config().get(USER), is(equalTo("oldUser")));
+        assertThat(nats.getValue(USER), is(equalTo("oldUser")));
     }
 
     @Test
     @DisplayName("Unknown config is ignored")
     void natsServer_invalidConfig_shouldThrowException() {
         assertThrows(IllegalArgumentException.class, () -> nats.config("user", "adminUser", "auth", "isValid", "", "password", " "));
-        assertThat(nats.config().get(AUTH), is(equalTo("isValid")));
+        assertThat(nats.getValue(AUTH), is(equalTo("isValid")));
     }
 
     @Test
@@ -199,6 +201,7 @@ class NatsStreamingComponentTest {
     void covDummy() {
         nats.tryStart();
         nats.close();
+        assertThat(mapValueOf(ENV, "some value").toString(), is(notNullValue()));
         assertThat(new NatsFileReaderException("dummy", new RuntimeException()), is(notNullValue()));
         assertThat(new NatsStartException(new RuntimeException()), is(notNullValue()));
         assertThat(new NatsStreamingDownloadException(new RuntimeException()), is(notNullValue()));
