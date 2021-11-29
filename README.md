@@ -1,7 +1,6 @@
 # nats-streaming-server
 
-[Nats streaming server](https://github.com/nats-io/nats-streaming-server) for testing which contains the
-original [Nats streaming server](https://github.com/nats-io/nats-streaming-server)
+Nats Server for testing which contains the original [Nats server](https://github.com/nats-io/nats-server)
 
 [![Build][build_shield]][build_link]
 [![Maintainable][maintainable_shield]][maintainable_link]
@@ -46,6 +45,8 @@ original [Nats streaming server](https://github.com/nats-io/nats-streaming-serve
 * Nats **plain Java**
   * [Nats-Server](https://github.com/YunaBraska/nats-server)
   * [Nats-Streaming-Server](https://github.com/YunaBraska/nats-streaming-server)
+* Nats for **JUnit**
+  * [Nats-Server-JUnit](https://github.com/YunaBraska/nats-server-junit)
 * Nats for **Spring Boot**
   * [Nats-Server-Embedded](https://github.com/YunaBraska/nats-server-embedded)
   * [Nats-Streaming-Server-Embedded](https://github.com/YunaBraska/nats-streaming-server-embedded)
@@ -57,7 +58,7 @@ original [Nats streaming server](https://github.com/nats-io/nats-streaming-serve
 <dependency>
   <groupId>berlin.yuna</groupId>
   <artifactId>nats-streaming-server</artifactId>
-  <version>0.23.4</version>
+  <version>0.23.9</version>
 </dependency>
 ```
 
@@ -108,21 +109,22 @@ original [Nats streaming server](https://github.com/nats-io/nats-streaming-serve
 | config(Map<key, value>)              | Set config map                                   |
 | config(key, value...)                | Set config array                                 |
 
-* All configurations are optional. (see all configs
-  here: [NatsStreamingConfig](https://github.com/YunaBraska/nats-streaming-server/blob/main/src/main/java/berlin/yuna/natsserver/config/NatsStreamingConfig.java)
-
 ### Example
 
 ```java
 public class MyNatsTest {
 
   public static void main(final String[] args) {
-    final NatsStreaming nats = new NatsStreaming()
-            .source("http://myOwnCachedNatsServerVersion")
-            .port(4222) //-1 for a random port
+    final NatsStreaming nats = new NatsStreaming(4222) //-1 for a random port
             .config(
-                    USER, "yuna",
-                    PASS, "braska"
+                    USER, "my_optional_user",
+                    PASS, "my_optional_password",
+                    NATS_BINARY_PATH, "optional/ready/to/use/nats/file",
+                    NATS_DOWNLOAD_URL, "optional/nats/download/url",
+                    NATS_CONFIG_FILE, "optional/config/file",
+                    NATS_ARGS, "--optionalArg1=123\\,--optionalArg2=456",
+                    NATS_VERSION, "v.1.0.0.optional",
+                    NATS_SYSTEM, "optional_download_suffix"
             )
             .start();
     nats.stop();
