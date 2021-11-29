@@ -6,7 +6,7 @@
 
     <groupId>berlin.yuna</groupId>
     <artifactId>nats-streaming-server</artifactId>
-    <version>0.23.7</version>
+    <version>0.23.8</version>
     <packaging>jar</packaging>
 
     <name>nats-streaming-server</name>
@@ -41,10 +41,10 @@
         <project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
         <project.reporting.outputEncoding>${project.encoding}</project.reporting.outputEncoding>
         <!-- PROD -->
-        <command-line-util.version>1.0.1</command-line-util.version>
+        <command-line-util.version>1.0.2</command-line-util.version>
         <!-- TEST -->
         <hamcrest-core.version>2.2</hamcrest-core.version>
-        <junit-jupiter-api.version>5.8.1</junit-jupiter-api.version>
+        <junit-jupiter-api.version>5.8.2</junit-jupiter-api.version>
         <!-- VERSIONS BUILD -->
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
         <maven-scm-plugin.version>1.11.2</maven-scm-plugin.version>
