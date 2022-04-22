@@ -111,7 +111,7 @@ public enum NatsStreamingConfig {
     //WRAPPER configs
     NATS_SYSTEM(null, "[STRING] suffix for binary path"),
     NATS_LOG_NAME(NatsStreaming.class.getSimpleName(), "[STRING] java wrapper name"),
-    NATS_STREAMING_VERSION("v0.24.4", "[STRING] Overwrites Nats server version on path"),
+    NATS_STREAMING_VERSION("v0.24.5", "[STRING] Overwrites Nats server version on path"),
     NATS_DOWNLOAD_URL("https://github.com/nats-io/nats-streaming-server/releases/download/%" + NATS_STREAMING_VERSION.name() + "%/nats-streaming-server-%" + NATS_STREAMING_VERSION.name() + "%-%" + NATS_SYSTEM.name() + "%.zip", "[STRING] Path to Nats binary or zip file"),
     NATS_BINARY_PATH(null, "[STRING] Target Path to Nats binary or zip file - auto from " + NATS_DOWNLOAD_URL.name() + ""),
     NATS_CONFIG_FILE(null, "[STRING] Additional property file with config value"),
