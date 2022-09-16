@@ -1,4 +1,4 @@
-name: "Trigger: On Tag"
+name: "Release on Tag"
 
 on:
   push:

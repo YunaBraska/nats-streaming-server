@@ -1,4 +1,4 @@
-name: "Trigger: On Merge"
+name: "Tag: on Schedule"
 
 on:
   workflow_dispatch:
