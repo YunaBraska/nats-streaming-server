@@ -42,6 +42,9 @@ jobs:
     name: "maven"
     uses: YunaBraska/YunaBraska/.github/workflows/wc_maven_central_release.yml@main
     secrets:
-      secrets: inherit
+      GPG_SIGNING_KEY: ${{secrets.GPG_SIGNING_KEY}}
+      GPG_PASSPHRASE: ${{secrets.GPG_PASSPHRASE}}
+      OSSH_USER: ${{secrets.OSSH_USER}}
+      OSSH_PASS: ${{secrets.OSSH_PASS}}
     # has_pom                     ${{needs.maven_test.outputs.has_pom}}
     # java_version                ${{needs.maven_test.outputs.java_version}}
