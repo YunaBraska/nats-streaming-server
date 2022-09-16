@@ -1,4 +1,4 @@
-name: "Tag: on Schedule"
+name: "MVN_RELEASE"
 
 on:
   workflow_dispatch:
