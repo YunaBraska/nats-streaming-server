@@ -27,7 +27,7 @@ jobs:
     # has_publish_to_code_climate ${{needs.maven_test.outputs.has_publish_to_code_climate}}
   maven_github_release:
     needs: maven_tag
-    if: needs.tag.outputs.semver_strategy != ''
+    if: needs.maven_tag.outputs.semver_strategy != ''
     name: "maven"
     uses: YunaBraska/YunaBraska/.github/workflows/wc_maven_github_release.yml@main
     # has_pom                     ${{needs.maven_test.outputs.has_pom}}
@@ -38,7 +38,7 @@ jobs:
     # semver_strategy             ${{needs.maven_test.outputs.semver_strategy}}
   maven_central_release:
     needs: maven_tag
-    if: needs.tag.outputs.semver_strategy != ''
+    if: needs.maven_tag.outputs.semver_strategy != ''
     name: "maven"
     uses: YunaBraska/YunaBraska/.github/workflows/wc_maven_central_release.yml@main
     secrets:
