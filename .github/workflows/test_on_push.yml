@@ -21,12 +21,3 @@ jobs:
     # java_version                ${{needs.maven_test.outputs.java_version}}
     # project_version             ${{needs.maven_test.outputs.project_version}}
     # has_publish_to_code_climate ${{needs.maven_test.outputs.has_publish_to_code_climate}}
-  do_something:
-    needs: maven_test
-    runs-on: ubuntu-latest
-    steps:
-      - name: "Set up JDK"
-        uses: actions/setup-java@main
-        with:
-          java-version: ${{needs.maven_test.outputs.java_version}}
-          distribution: 'adopt'
