@@ -25,3 +25,26 @@ jobs:
     # project_version             ${{needs.maven_test.outputs.project_version}}
     # semver_strategy             ${{needs.maven_test.outputs.semver_strategy}}
     # has_publish_to_code_climate ${{needs.maven_test.outputs.has_publish_to_code_climate}}
+  maven_github_release:
+    needs: maven_tag
+    if: needs.tag.outputs.semver_strategy != ''
+    name: "maven"
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_maven_github_release.yml@main
+    # has_pom                     ${{needs.maven_test.outputs.has_pom}}
+    # changelog                   ${{needs.maven_test.outputs.changelog}}
+    # java_version                ${{needs.maven_test.outputs.java_version}}
+    # latest_tag                  ${{needs.maven_test.outputs.latest_tag}}
+    # second_latest_tag           ${{needs.maven_test.outputs.second_latest_tag}}
+    # semver_strategy             ${{needs.maven_test.outputs.semver_strategy}}
+  maven_central_release:
+    needs: maven_tag
+    if: needs.tag.outputs.semver_strategy != ''
+    name: "maven"
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_maven_central_release.yml@main
+    with:
+      GPG_SIGNING_KEY: ${{secrets.GPG_SIGNING_KEY}}
+      GPG_PASSPHRASE: ${{secrets.GPG_PASSPHRASE}}
+      OSSH_USER: ${{secrets.OSSH_USER}}
+      OSSH_PASS: ${{secrets.OSSH_PASS}}
+    # has_pom                     ${{needs.maven_test.outputs.has_pom}}
+    # java_version                ${{needs.maven_test.outputs.java_version}}
