@@ -25,6 +25,21 @@ jobs:
     # project_version             ${{needs.maven_test.outputs.project_version}}
     # semver_strategy             ${{needs.maven_test.outputs.semver_strategy}}
     # has_publish_to_code_climate ${{needs.maven_test.outputs.has_publish_to_code_climate}}
+  tag_outputs:
+    needs: "maven_tag"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "print"
+        run: |
+          echo "-------------------- OUTPUTS --------------------"
+          echo "has_pom                   [${{needs.maven_tag.outputs.has_pom}}]"
+          echo "new_version               [${{needs.maven_tag.outputs.new_version}}]"
+          echo "java_version              [${{needs.maven_tag.outputs.java_version}}]"
+          echo "project_version           [${{needs.maven_tag.outputs.project_version}}]"
+          echo "semver_strategy           [${{needs.maven_tag.outputs.semver_strategy}}]"
+          echo "has_maven_central_release [${{needs.maven_tag.outputs.has_maven_central_release}}]"
+          echo "--------------------- ENVS ---------------------"
+          env
   maven_github_release:
     needs: maven_tag
     if: needs.maven_tag.outputs.semver_strategy != ''
