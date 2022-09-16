@@ -1,4 +1,4 @@
-name: "Release: On Push"
+name: "Test: On Push"
 
 on:
   workflow_dispatch:
