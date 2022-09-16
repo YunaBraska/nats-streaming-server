@@ -2,11 +2,11 @@
 name: JAVA_CI
 on:
   workflow_dispatch:
-#    branches: ['main']
+#    branches: ['XmainX']
   push:
-    branches: ['main']
+    branches: ['XmainX']
   pull_request:
-    branches: ['main']
+    branches: ['XmainX']
 
 jobs:
   build:
