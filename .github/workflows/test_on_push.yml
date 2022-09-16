@@ -16,7 +16,7 @@ jobs:
     needs: maven_update
     name: "maven"
     uses: YunaBraska/YunaBraska/.github/workflows/wc_maven_test.yml@main
-    with:
+    secrets:
       CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
     # has_pom                     ${{needs.maven_test.outputs.has_pom}}
     # has_changes                 ${{needs.maven_test.outputs.has_changes}}
