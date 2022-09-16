@@ -32,11 +32,11 @@ jobs:
       - name: "print"
         run: |
           echo "-------------------- OUTPUTS --------------------"
+          echo "semver                    [${{needs.maven_tag.outputs.semver}}]"
           echo "has_pom                   [${{needs.maven_tag.outputs.has_pom}}]"
           echo "new_version               [${{needs.maven_tag.outputs.new_version}}]"
           echo "java_version              [${{needs.maven_tag.outputs.java_version}}]"
           echo "project_version           [${{needs.maven_tag.outputs.project_version}}]"
-          echo "semver_strategy           [${{needs.maven_tag.outputs.semver_strategy}}]"
           echo "has_maven_central_release [${{needs.maven_tag.outputs.has_maven_central_release}}]"
           echo "--------------------- ENVS ---------------------"
           env
