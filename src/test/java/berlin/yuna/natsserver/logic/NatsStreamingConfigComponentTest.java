@@ -45,9 +45,9 @@ class NatsStreamingConfigComponentTest {
     @Test
     @DisplayName("Compare nats with java config")
     void compareNatsStreamingConfig() throws IOException {
-        updateNatsVersion();
+        final String newNatsVersion = updateNatsVersion();
         Files.deleteIfExists(new NatsStreaming().binaryFile());
-        final NatsStreaming nats = new NatsStreaming(-1);
+        final NatsStreaming nats = new NatsStreaming(-1).config(NATS_STREAMING_VERSION, newNatsVersion);
         nats.downloadNats();
         final Path natsServerPath = nats.binaryFile();
 
@@ -78,7 +78,7 @@ class NatsStreamingConfigComponentTest {
         assertThat(NatsStreamingConfig.CLUSTERED.key(), is(equalTo("--clustered=")));
     }
 
-    private void updateNatsVersion() throws IOException {
+    private String updateNatsVersion() throws IOException {
         try (final Stream<Path> stream = Files.walk(FileSystems.getDefault().getPath(System.getProperty("user.dir")), 99)) {
             final Path configJavaFile = stream.filter(path -> path.getFileName().toString().equalsIgnoreCase(NatsStreamingConfig.class.getSimpleName() + ".java")).findFirst().orElse(null);
             final URL url = new URL("https://api.github.com/repos/nats-io/nats-streaming-server/releases/latest");
@@ -87,8 +87,9 @@ class NatsStreamingConfigComponentTest {
             final String previousVersion = NATS_STREAMING_VERSION.value();
             final String newVersion = updateNatsVersion(configJavaFile, read(con.getInputStream()));
             if (!requireNonNull(previousVersion).equals(newVersion)) {
-                Files.write(Paths.get(System.getProperty("user.dir"), "version.txt"), (newVersion.startsWith("v")? newVersion.substring(1) : newVersion).getBytes());
+                Files.write(Paths.get(System.getProperty("user.dir"), "version.txt"), (newVersion.startsWith("v") ? newVersion.substring(1) : newVersion).getBytes());
             }
+            return newVersion;
         }
     }
 
