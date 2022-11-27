@@ -18,6 +18,7 @@ Nats Server for testing which contains the original [Nats Streaming server](http
 [![Javadoc][javadoc_shield]][javadoc_link]
 [![Size][size_shield]][size_shield]
 ![Label][label_shield]
+![Label][java_version]
 
 [build_shield]: https://github.com/YunaBraska/nats-streaming-server/workflows/MVN_RELEASE/badge.svg
 [build_link]: https://github.com/YunaBraska/nats-streaming-server/actions?query=workflow%3AMVN_RELEASE
@@ -43,6 +44,7 @@ Nats Server for testing which contains the original [Nats Streaming server](http
 [label_shield]: https://img.shields.io/badge/Yuna-QueenInside-blueviolet?style=flat-square
 [gitter_shield]: https://img.shields.io/gitter/room/YunaBraska/nats-streaming-server?style=flat-square
 [gitter_link]: https://gitter.im/nats-streaming-server/Lobby
+[java_version]: https://img.shields.io/badge/java-17-blueviolet?style=flat-square
 
 **[Deprecation Notice](https://github.com/nats-io/nats-streaming-server#warning--deprecation-notice-warning)**
 
