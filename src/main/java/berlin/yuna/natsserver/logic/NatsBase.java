@@ -1,6 +1,7 @@
 package berlin.yuna.natsserver.logic;
 
 import berlin.yuna.clu.logic.SystemUtil;
+import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.natsserver.config.NatsStreamingConfig;
 import berlin.yuna.natsserver.model.MapValue;
 import berlin.yuna.natsserver.model.ValueSource;
@@ -38,6 +39,7 @@ import static berlin.yuna.natsserver.config.NatsStreamingConfig.PORT;
 import static berlin.yuna.natsserver.logic.NatsUtils.download;
 import static berlin.yuna.natsserver.logic.NatsUtils.getEnv;
 import static berlin.yuna.natsserver.logic.NatsUtils.getNextFreePort;
+import static berlin.yuna.natsserver.logic.NatsUtils.ignoreException;
 import static berlin.yuna.natsserver.logic.NatsUtils.isEmpty;
 import static berlin.yuna.natsserver.logic.NatsUtils.removeQuotes;
 import static berlin.yuna.natsserver.logic.NatsUtils.resolveEnvs;
@@ -74,7 +76,7 @@ public abstract class NatsBase implements AutoCloseable {
     final Logger logger;
     final Map<NatsStreamingConfig, MapValue> config = new ConcurrentHashMap<>();
     final List<String> customArgs = new ArrayList<>();
-    Process process;
+    Terminal terminal;
     private static final String TMP_DIR = "java.io.tmpdir";
 
     NatsBase(final List<String> customArgs) {
@@ -193,11 +195,10 @@ public abstract class NatsBase implements AutoCloseable {
     }
 
     NatsBase deletePidFile() {
-        try {
+        ignoreException(run -> {
             Files.deleteIfExists(pidFile());
-        } catch (IOException ignored) {
-            //ignored
-        }
+            return run;
+        });
         return this;
     }
 

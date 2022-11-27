@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static berlin.yuna.natsserver.config.NatsStreamingConfig.NATS_SYSTEM;
 import static berlin.yuna.natsserver.config.NatsStreamingConfig.PORT;
@@ -172,25 +173,23 @@ public class NatsStreaming extends NatsBase {
      */
     @SuppressWarnings({"java:S899"})
     public synchronized NatsStreaming start(final long timeoutMs) throws Exception {
-        if (process != null) {
+        if (terminal != null && terminal.running()) {
             logger.severe(() -> format("[%s] is already running", name));
             return this;
         }
 
-        setNextFreePort();
-        final int port = port();
+        final int port = setNextFreePort().port();
         validatePort(port, timeoutMs, true, () -> new BindException("Address already in use [" + port + "]"));
 
         final Path binaryPath = downloadNats();
         logger.fine(() -> format("Starting [%s] port [%s] version [%s]", name, port, getValue(NATS_SYSTEM)));
 
-        final Terminal terminal = new Terminal()
-                .consumerInfo(logger::info)
-                .consumerError(logger::severe)
+        terminal = new Terminal()
+                .consumerInfoStream(logger::info)
+                .consumerErrorStream(logger::severe)
                 .timeoutMs(timeoutMs > 0 ? timeoutMs : 10000)
                 .breakOnError(false)
-                .execute(prepareCommand());
-        process = terminal.process();
+                .execute(prepareCommand(), null);
 
         validatePort(port, timeoutMs, false, () -> new PortUnreachableException(name + " failed to start with port [" + port + "]"));
         logger.info(() -> format("Started [%s] port [%s] version [%s] pid [%s]", name, port, getValue(NATS_SYSTEM), pid()));
@@ -221,16 +220,10 @@ public class NatsStreaming extends NatsBase {
      */
     public synchronized NatsStreaming stop(final long timeoutMs) {
         try {
-            logger.info(() -> format("Stopping [%s]", name));
-            if (pid() != -1) {
-                new Terminal()
-                        .consumerInfo(logger::info)
-                        .consumerError(logger::severe)
-                        .breakOnError(false)
-                        .execute(binaryFile() + " " + SIGNAL.key() + " stop=" + pid());
-            }
-            process.destroy();
-            process.waitFor();
+            sendStopSignal();
+            waitForShutDown(timeoutMs);
+            terminal.process().destroy();
+            terminal.process().waitFor();
         } catch (NullPointerException | InterruptedException ignored) {
             logger.warning(() -> format("Could not find process to stop [%s]", name));
             Thread.currentThread().interrupt();
@@ -242,5 +235,23 @@ public class NatsStreaming extends NatsBase {
         }
         deletePidFile();
         return this;
+    }
+
+    private void waitForShutDown(final long timeoutMs) {
+        Optional.of(port()).filter(port -> port > 0).ifPresent(port -> {
+            logger.info(() -> format("Stopped [%s]", name));
+            waitForPort(port, timeoutMs, true);
+        });
+    }
+
+    private void sendStopSignal() {
+        logger.info(() -> format("Stopping [%s]", name));
+        if (pid() != -1) {
+            new Terminal()
+                    .consumerInfoStream(logger::info)
+                    .consumerErrorStream(logger::severe)
+                    .breakOnError(false)
+                    .execute(binaryFile() + " " + SIGNAL.key() + " stop=" + pid());
+        }
     }
 }
