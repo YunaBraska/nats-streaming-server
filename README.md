@@ -25,6 +25,7 @@ Nats Server for testing which contains the original [Nats Streaming server](http
 [maintainable_shield]: https://img.shields.io/codeclimate/maintainability/YunaBraska/nats-streaming-server?style=flat-square
 [maintainable_link]: https://codeclimate.com/github/YunaBraska/nats-streaming-server/maintainability
 [coverage_shield]: https://img.shields.io/codeclimate/coverage/YunaBraska/nats-streaming-server?style=flat-square
+
 [coverage_link]: https://codeclimate.com/github/YunaBraska/nats-streaming-server/test_coverage
 [issues_shield]: https://img.shields.io/github/issues/YunaBraska/nats-streaming-server?style=flat-square
 [issues_link]: https://github.com/YunaBraska/nats-streaming-server/commits/main
@@ -44,7 +45,7 @@ Nats Server for testing which contains the original [Nats Streaming server](http
 [label_shield]: https://img.shields.io/badge/Yuna-QueenInside-blueviolet?style=flat-square
 [gitter_shield]: https://img.shields.io/gitter/room/YunaBraska/nats-streaming-server?style=flat-square
 [gitter_link]: https://gitter.im/nats-streaming-server/Lobby
-[java_version]: https://img.shields.io/badge/java-17-blueviolet?style=flat-square
+[java_version]: https://img.shields.io/badge/java-11-blueviolet?style=flat-square
 
 **[Deprecation Notice](https://github.com/nats-io/nats-streaming-server#warning--deprecation-notice-warning)**
 
