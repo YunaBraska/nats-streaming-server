@@ -123,7 +123,7 @@ public enum NatsStreamingConfig {
     NATS_TIMEOUT_MS(null, 10000, String.class, "true = auto closable, false manual use `.start()` method"),
     NATS_SYSTEM(null, null, String.class, "suffix for binary path"),
     NATS_LOG_NAME(null, NatsStreaming.class.getSimpleName(), String.class, "java wrapper name"),
-    NATS_STREAMING_VERSION(null, "v0.25.5", String.class, "Overwrites Nats server version on path"),
+    NATS_STREAMING_VERSION(null, "v0.25.6", String.class, "Overwrites Nats server version on path"),
     NATS_DOWNLOAD_URL(null, "https://github.com/nats-io/nats-streaming-server/releases/download/%" + NATS_STREAMING_VERSION.name() + "%/nats-streaming-server-%" + NATS_STREAMING_VERSION.name() + "%-%" + NATS_SYSTEM.name() + "%.zip", String.class, "Path to Nats binary or zip file"),
     NATS_BINARY_PATH(null, null, String.class, "Target Path to Nats binary or zip file - auto from " + NATS_DOWNLOAD_URL.name() + ""),
     NATS_PROPERTY_FILE(null, null, String.class, "Additional config file (properties / KV) same as DSL configs"),
