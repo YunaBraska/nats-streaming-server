@@ -123,7 +123,8 @@ public class NatsStreaming implements NatsInterface {
      * @param natsOptions nats options
      */
     public NatsStreaming(final io.nats.commons.NatsOptions natsOptions) {
-        Runtime.getRuntime().addShutdownHook(new Thread(this::close));
+        ofNullable(getValue(NATS_SHUTDOWN_HOOK)).filter(Boolean::valueOf)
+                .ifPresent(shutdownHook -> Runtime.getRuntime().addShutdownHook(new Thread(this::close)));
         final var timeoutMsTmp = new AtomicLong(-1);
         if (natsOptions instanceof NatsStreamingOptions) {
             ((NatsStreamingOptions) natsOptions).config().forEach(this::addConfig);
