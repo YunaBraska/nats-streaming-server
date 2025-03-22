@@ -77,6 +77,14 @@ class NatsStreamingOptionsBuilderTest {
         options.autostart(true);
         assertThat(options.autostart(), is(equalTo(true)));
 
+        //SHUTDOWN HOOK
+        assertThat(options.shutdownHook(), is(nullValue()));
+        options.shutdownHook(false);
+        assertThat(options.shutdownHook(), is(equalTo(false)));
+
+        options.shutdownHook(true);
+        assertThat(options.shutdownHook(), is(equalTo(true)));
+
         //CONFIG_FILE
         assertThat(options.configFile(), is(nullValue()));
         options.configFile(configFile);
@@ -112,9 +120,9 @@ class NatsStreamingOptionsBuilderTest {
         assertThat(options.timeoutMs(), is(equalTo(timeoutMs)));
 
         //OPTIONS BUILD
-        assertThat(options.configMap().size(), is(10));
+        assertThat(options.configMap().size(), is(11));
         final var build = options.build();
-        assertThat(build.config().size(), is(10));
+        assertThat(build.config().size(), is(11));
 
         assertThat(build.version(), is(equalTo(version.value())));
         assertThat(build.port(), is(equalTo(port)));
@@ -129,7 +137,7 @@ class NatsStreamingOptionsBuilderTest {
         assertThat(build.config().get(NatsStreamingConfig.NATS_TIMEOUT_MS), is(equalTo(String.valueOf(timeoutMs))));
 
         //OPTIONS INTERFACE
-        assertThat(options.configMap().size(), is(10));
+        assertThat(options.configMap().size(), is(11));
         final var interFace = (io.nats.commons.NatsOptions) options.build();
 
         assertThat(interFace.port(), is(equalTo(port)));

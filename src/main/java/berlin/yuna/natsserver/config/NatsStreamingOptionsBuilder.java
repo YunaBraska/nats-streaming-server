@@ -216,7 +216,6 @@ public class NatsStreamingOptionsBuilder {
         return getValueB(configMap, NatsStreamingConfig.NATS_AUTOSTART);
     }
 
-
     /**
      * @param autostart true = auto closable, false manual use `.start()` method
      * @return self {@link NatsStreamingOptionsBuilder}
@@ -224,6 +223,24 @@ public class NatsStreamingOptionsBuilder {
      */
     public NatsStreamingOptionsBuilder autostart(final Boolean autostart) {
         setValueB(configMap, NatsStreamingConfig.NATS_AUTOSTART, autostart);
+        return this;
+    }
+
+    /**
+     * @return true = registers a shutdown hook, false manual use `.stop()` method
+     * @see NatsStreamingConfig#NATS_SHUTDOWN_HOOK
+     */
+    public Boolean shutdownHook() {
+        return getValueB(configMap, NatsStreamingConfig.NATS_SHUTDOWN_HOOK);
+    }
+
+    /**
+     * @param enabled true = registers a shutdown hook, false manual use `.stop()` method
+     * @return self {@link NatsStreamingOptionsBuilder}
+     * @see NatsStreamingConfig#NATS_SHUTDOWN_HOOK
+     */
+    public NatsStreamingOptionsBuilder shutdownHook(final Boolean enabled) {
+        setValueB(configMap, NatsStreamingConfig.NATS_SHUTDOWN_HOOK, enabled);
         return this;
     }
 

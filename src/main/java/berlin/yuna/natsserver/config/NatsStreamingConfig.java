@@ -119,6 +119,7 @@ public enum NatsStreamingConfig {
 
     //WRAPPER configs
     NATS_AUTOSTART(null, true, Boolean.class, "[true] == auto closable, [false] == manual use `.start()` method (default: true)"),
+    NATS_SHUTDOWN_HOOK(null, true, Boolean.class, "[true] == registers a shutdown hook, [false] == manual use `.stop()` method (default: true)"),
     NATS_LOG_LEVEL(null, null, String.class, "java log level e.g. [OFF, SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST, ALL]"),
     NATS_TIMEOUT_MS(null, 10000, String.class, "true = auto closable, false manual use `.start()` method"),
     NATS_SYSTEM(null, null, String.class, "suffix for binary path"),
