@@ -1,0 +1,31 @@
+name: 🧪 CI · Pull Request
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Ref.
+        required: false
+        default: ''
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: build-pr-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_java_build_common.yml@5cb31807fb82e9e818a97677490056b05032ee1c
+    with:
+      ref: ${{ inputs.ref || github.sha }}
