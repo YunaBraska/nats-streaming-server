@@ -15,7 +15,6 @@ import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -102,11 +101,7 @@ class NatsConfigComponentTest {
                         con.setRequestProperty("Authorization", "Token " + token);
                     });
 
-            final String previousVersion = NATS_STREAMING_VERSION.defaultValueStr();
             final String newVersion = updateNatsVersion(configJavaFile, read(con.getInputStream()));
-            if (!requireNonNull(previousVersion).equals(newVersion)) {
-                Files.write(Paths.get(System.getProperty("user.dir"), "version.txt"), (newVersion.startsWith("v") ? newVersion.substring(1) : newVersion).getBytes());
-            }
             return newVersion;
         }
     }
