@@ -102,13 +102,10 @@ class NatsStreamingComponentTest {
     @Test
     @DisplayName("Duplicate instances [FAIL]")
     void natsServer_asTwoInstances_shouldThrowBindException() {
-        final NatsStreamingOptions config = natsStreamingBuilder().port(4500).timeoutMs(2000).build();
-        new NatsStreaming(config);
-        assertThrows(
-                NatsStreamingStartException.class,
-                () -> new NatsStreaming(config),
-                "Address already in use [4500]"
-        );
+        try (final var first = new NatsStreaming(-1)) {
+            final NatsStreamingOptions config = natsStreamingBuilder().port(first.port()).timeoutMs(2000).build();
+            assertThrows(NatsStreamingStartException.class, () -> new NatsStreaming(config));
+        }
     }
 
     @Test
